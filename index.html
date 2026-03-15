@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a472a">
+<title>כמה עלה עד עכשיו | Cart Total</title>
+<style>
+  :root {
+    --green: #1a472a;
+    --green-mid: #2d6a4f;
+    --green-light: #52b788;
+    --green-pale: #d8f3dc;
+    --accent: #f4a261;
+    --accent-dark: #e76f51;
+    --text: #1b1b1b;
+    --text-muted: #5a5a5a;
+    --bg: #f8f9f4;
+    --bg-card: #ffffff;
+    --border: #e0e4dc;
+    --red: #c0392b;
+    --red-light: #fdecea;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 120px;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--green);
+    color: #fff;
+    padding: 16px 18px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .app-title { font-size: 13px; opacity: 0.75; font-weight: 400; }
+  .lang-btn {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: #fff;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .lang-btn:hover { background: rgba(255,255,255,0.25); }
+
+  .total-display {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .total-amount {
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+  .currency { font-size: 20px; font-weight: 400; opacity: 0.8; }
+  .item-count { font-size: 13px; opacity: 0.65; margin-top: 2px; }
+
+  /* Budget bar */
+  .budget-bar-wrap {
+    margin-top: 8px;
+    display: none;
+  }
+  .budget-bar-wrap.visible { display: block; }
+  .budget-track {
+    height: 6px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .budget-fill {
+    height: 100%;
+    background: var(--green-light);
+    border-radius: 3px;
+    transition: width 0.4s ease, background 0.3s;
+  }
+  .budget-fill.warn { background: #f4a261; }
+  .budget-fill.over { background: #e74c3c; }
+  .budget-label { font-size: 11px; opacity: 0.7; }
+
+  /* MAIN */
+  main { padding: 14px 14px 0; max-width: 600px; margin: 0 auto; }
+
+  /* ADD PANEL */
+  .add-panel {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+
+  .panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+
+  /* Camera button */
+  .cam-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s, transform 0.1s;
+    margin-bottom: 12px;
+  }
+  .cam-btn:hover { background: var(--green-mid); }
+  .cam-btn:active { transform: scale(0.98); }
+
+  .cam-icon { font-size: 20px; }
+
+  #fileInput { display: none; }
+
+  /* OCR preview */
+  .ocr-preview {
+    display: none;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .ocr-preview.visible { display: block; }
+  .ocr-preview img {
+    max-width: 100%;
+    max-height: 160px;
+    border-radius: var(--radius-sm);
+    object-fit: contain;
+    border: 1px solid var(--border);
+  }
+  .ocr-status {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+  .ocr-status.scanning { color: var(--green-mid); font-weight: 600; }
+  .ocr-status.done { color: var(--green); font-weight: 600; }
+  .ocr-status.error { color: var(--red); }
+
+  /* Price input row */
+  .price-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+    margin-bottom: 8px;
+  }
+
+  .price-input-wrap {
+    width: 130px;
+    flex: none;
+    position: relative;
+  }
+  .price-input-wrap::before {
+    content: '₪';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 15px;
+    pointer-events: none;
+  }
+
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    padding: 11px 30px 11px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 18px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--bg);
+    transition: border-color 0.2s;
+    text-align: left;
+    direction: ltr;
+  }
+  input[type="number"]:focus, input[type="text"]:focus {
+    outline: none;
+    border-color: var(--green-light);
+  }
+
+  .qty-input {
+    width: 72px;
+    flex-shrink: 0;
+    text-align: center;
+  }
+  .qty-input input {
+    width: 100%;
+    padding: 11px 8px;
+    text-align: center;
+    font-size: 18px;
+  }
+
+  /* Deal toggle */
+  .deal-toggle-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+  .deal-toggle-btn:hover { border-color: var(--accent); color: var(--accent-dark); }
+  .deal-toggle-btn.active { border-color: var(--accent); background: #fff8f2; color: var(--accent-dark); }
+
+  /* Deal section */
+  .deal-section {
+    display: none;
+    background: #fff8f2;
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    margin-bottom: 8px;
+    animation: slideDown 0.2s ease;
+  }
+  .deal-section.visible { display: block; }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .deal-title { font-size: 12px; font-weight: 600; color: var(--accent-dark); margin-bottom: 10px; }
+
+  .deal-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .deal-row span { font-size: 14px; color: var(--text-muted); white-space: nowrap; }
+  .deal-row input {
+    width: 70px;
+    padding: 8px;
+    font-size: 15px;
+  }
+
+  /* Name input */
+  .name-input-wrap {
+    margin-bottom: 8px;
+  }
+  .name-input-wrap input {
+    font-size: 14px;
+    padding: 8px 12px;
+    direction: rtl;
+  }
+
+  /* Add button */
+  .add-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    letter-spacing: 0.3px;
+  }
+  .add-btn:hover { background: var(--accent-dark); }
+  .add-btn:active { transform: scale(0.98); }
+
+  /* BUDGET PANEL */
+  .budget-panel {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+  .budget-mode-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .budget-tab {
+    flex: 1;
+    padding: 7px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: none;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .budget-tab.active-limit { border-color: var(--red); background: #fff0ef; color: var(--red); font-weight: 600; }
+  .budget-tab.active-goal  { border-color: var(--green-light); background: var(--green-pale); color: var(--green); font-weight: 600; }
+  .budget-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .budget-label-text { font-size: 14px; color: var(--text-muted); flex-shrink: 0; }
+  .budget-panel input {
+    width: 120px;
+    flex: none;
+    padding: 8px 28px 8px 10px;
+    font-size: 15px;
+  }
+  .budget-clear {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 4px;
+    flex-shrink: 0;
+  }
+
+  /* ITEMS LIST */
+  .items-section { margin-bottom: 14px; }
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .section-title { font-size: 14px; font-weight: 700; color: var(--text); }
+  .reset-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    color: var(--text-muted);
+    border-radius: var(--radius-sm);
+    padding: 5px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .reset-btn:hover { border-color: var(--red); color: var(--red); }
+
+  .items-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .item-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    animation: fadeIn 0.25s ease;
+    transition: box-shadow 0.2s;
+  }
+  .item-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+  .item-card.editing { border-color: var(--green-light); box-shadow: 0 0 0 2px rgba(82,183,136,0.2); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .item-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--green-pale);
+    color: var(--green);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .item-body { flex: 1; min-width: 0; }
+
+  .item-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: var(--text);
+  }
+
+  .item-detail {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .item-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .item-total-price {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--green);
+  }
+  .item-unit-price {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Edit mode inline */
+  .item-edit-area {
+    display: none;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .item-card.editing .item-edit-area { display: block; }
+  .item-card.editing .item-display { opacity: 0.5; }
+
+  .edit-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .edit-row label { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  .edit-row input { flex: 1; font-size: 14px; padding: 7px 10px; }
+
+  .edit-actions { display: flex; gap: 8px; }
+  .edit-save {
+    flex: 1;
+    padding: 8px;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .edit-cancel {
+    padding: 8px 14px;
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text-muted);
+  }
+
+  .item-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .action-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .action-btn:hover { border-color: var(--green-light); color: var(--green); }
+  .action-btn.delete:hover { border-color: var(--red); color: var(--red); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 15px; }
+
+  /* BOTTOM SHEET — Tesseract loading */
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .loading-overlay.visible { display: flex; }
+  .loading-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    text-align: center;
+    max-width: 280px;
+    width: 90%;
+  }
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--green-pale);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--text); }
+  .loading-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 110px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--green);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 300;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.warn { background: var(--accent-dark); }
+
+  /* Deal badge */
+  .deal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #fff3e8;
+    color: var(--accent-dark);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-card">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">מזהה מחיר...</div>
+    <div class="loading-sub" id="loadingSubText">אנא המתן</div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Reset confirm modal -->
+<div id="resetModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border-radius:var(--radius);padding:24px 20px;max-width:280px;width:88%;margin:0 auto;text-align:center">
+    <div style="font-size:32px;margin-bottom:12px">🗑️</div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:8px" id="modalTitle">איפוס עגלה</div>
+    <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;line-height:1.5" id="modalBody">כל הפריטים יימחקו. האם להמשיך?</div>
+    <div style="display:flex;gap:10px">
+      <button onclick="closeResetModal()" style="flex:1;padding:11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:none;font-size:14px;cursor:pointer;font-family:inherit;color:var(--text-muted)" id="modalCancel">ביטול</button>
+      <button onclick="doReset()" style="flex:1;padding:11px;border:none;border-radius:var(--radius-sm);background:var(--red);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit" id="modalConfirm">אפס</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-top">
+    <div>
+      <div class="app-title" id="appTitle">כמה עלה עד עכשיו</div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="lang-btn" id="langBtn" onclick="toggleLang()">EN</button>
+      <button class="lang-btn" onclick="toggleSettings()" title="הגדרות">⚙️</button>
+    </div>
+  </div>
+  <div class="total-display">
+    <span class="currency">₪</span>
+    <span class="total-amount" id="totalDisplay">0.00</span>
+  </div>
+  <div class="item-count" id="itemCount">0 פריטים בעגלה</div>
+  <div class="budget-bar-wrap" id="budgetBarWrap">
+    <div class="budget-track">
+      <div class="budget-fill" id="budgetFill"></div>
+    </div>
+    <div class="budget-label" id="budgetLabel"></div>
+  </div>
+</header>
+
+<div id="settingsPanel" style="display:none;background:#fff8f2;border:1.5px solid var(--accent);border-radius:var(--radius);padding:16px;margin:12px 14px 0;max-width:600px;margin-left:auto;margin-right:auto">
+  <div style="font-size:13px;font-weight:700;color:var(--accent-dark);margin-bottom:10px">⚙️ הגדרות API</div>
+  <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;line-height:1.5">כדי לסרוק תגי מחיר, צריך API key מ-<a href="https://console.anthropic.com" target="_blank" style="color:var(--green)">console.anthropic.com</a> ← API Keys ← Create Key</div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." style="flex:1;font-size:13px;font-family:monospace;direction:ltr" />
+    <button onclick="saveApiKey()" style="padding:8px 14px;background:var(--green);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;white-space:nowrap">שמור</button>
+  </div>
+  <div id="apiKeyStatus" style="font-size:12px;margin-top:6px;color:var(--text-muted)"></div>
+</div>
+
+<main>
+
+  <!-- Budget panel -->
+  <div class="budget-panel">
+    <div class="budget-mode-tabs">
+      <button class="budget-tab" id="tabLimit" onclick="setBudgetMode('limit')">🔴 <span id="tabLimitText">הגבלת תקציב</span></button>
+      <button class="budget-tab" id="tabGoal"  onclick="setBudgetMode('goal')">🟢 <span id="tabGoalText">יעד מינימום</span></button>
+    </div>
+    <div class="budget-input-row">
+      <div class="budget-label-text" id="budgetLabelText">סכום:</div>
+      <div class="price-input-wrap" style="margin-bottom:0">
+        <input type="number" id="budgetInput" placeholder="0" min="0" step="1" oninput="updateBudget()" />
+      </div>
+      <button class="budget-clear" onclick="clearBudget()" title="נקה">✕</button>
+    </div>
+  </div>
+
+  <!-- Add panel -->
+  <div class="add-panel">
+    <div class="panel-title" id="panelTitle">הוסף פריט</div>
+
+    <!-- Camera button -->
+    <button class="cam-btn" id="camBtn" onclick="document.getElementById('fileInput').click()">
+      <span class="cam-icon">📷</span>
+      <span id="camBtnText">צלם תג מחיר</span>
+    </button>
+    <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleImage(event)">
+    <input type="file" id="productFileInput" accept="image/*" capture="environment" onchange="handleProductImage(event)" style="display:none">
+
+    <!-- OCR preview -->
+    <div class="ocr-preview" id="ocrPreview">
+      <img id="ocrImg" src="" alt="">
+      <div class="ocr-status" id="ocrStatus"></div>
+    </div>
+
+    <!-- Product scan button (shown only when price found but name not) -->
+    <button class="cam-btn" id="productScanBtn" onclick="document.getElementById('productFileInput').click()" style="display:none;background:var(--green-mid);margin-bottom:12px">
+      <span class="cam-icon">📦</span>
+      <span id="productScanTxt">צלם מוצר לזיהוי שם</span>
+    </button>
+
+    <!-- Name -->
+    <div class="name-input-wrap">
+      <input type="text" id="nameInput" placeholder="שם מוצר (אופציונלי)" dir="rtl" style="text-align:right"/>
+    </div>
+
+    <!-- Price + Qty -->
+    <div class="price-row">
+      <div class="price-input-wrap">
+        <input type="number" id="priceInput" placeholder="0.00" min="0" step="0.01" />
+      </div>
+      <div class="qty-input">
+        <input type="number" id="qtyInput" value="1" min="1" step="1" />
+      </div>
+    </div>
+
+    <!-- Deal toggle -->
+    <button class="deal-toggle-btn" id="dealToggleBtn" onclick="toggleDeal()">
+      <span>🏷️</span>
+      <span id="dealToggleText">יש מבצע?</span>
+    </button>
+
+    <!-- Deal section -->
+    <div class="deal-section" id="dealSection">
+      <div class="deal-title" id="dealSectionTitle">⚡ הגדר מבצע</div>
+      <div class="deal-row">
+        <span id="dealLabel1">קנה</span>
+        <input type="number" id="dealQty" value="2" min="2" step="1" style="width:60px" />
+        <span id="dealLabel2">ב-₪</span>
+        <input type="number" id="dealPrice" placeholder="0.00" min="0" step="0.01" style="width:90px"/>
+      </div>
+    </div>
+
+    <!-- Add -->
+    <button class="add-btn" id="addBtn" onclick="addItem()">
+      <span id="addBtnText">הוסף לעגלה +</span>
+    </button>
+  </div>
+
+  <!-- Items list -->
+  <div class="items-section">
+    <div class="section-header">
+      <div class="section-title" id="sectionTitle">פריטים בעגלה</div>
+      <button class="reset-btn" id="resetBtn" onclick="confirmReset()">אפס הכל</button>
+    </div>
+    <div class="items-list" id="itemsList"></div>
+  </div>
+
+</main>
+
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let items = JSON.parse(localStorage.getItem('cartItems') || '[]');
+let budget = parseFloat(localStorage.getItem('cartBudget') || '0');
+let lang = localStorage.getItem('cartLang') || 'he';
+let dealMode = false;
+let editingId = null;
+
+// ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
+const T = {
+  he: {
+    appTitle: 'כמה עלה עד עכשיו',
+    panelTitle: 'הוסף פריט',
+    camBtn: 'צלם תג מחיר',
+    namePlaceholder: 'שם מוצר (אופציונלי)',
+    dealToggle: 'יש מבצע?',
+    dealTitle: '⚡ הגדר מבצע',
+    dealLabel1: 'קנה',
+    dealLabel2: 'ב-₪',
+    addBtn: 'הוסף לעגלה +',
+    sectionTitle: 'פריטים בעגלה',
+    resetBtn: 'אפס הכל',
+    budgetLabel: 'תקציב:',
+    itemsWord: (n) => n === 1 ? 'פריט בעגלה' : 'פריטים בעגלה',
+    scanning: 'סורק מחיר...',
+    scanDone: (p) => `זיהוי: ₪${p}`,
+    scanFail: 'לא זוהה מחיר — הכנס ידנית',
+    scanDoneWithName: (p, n) => `זוהה: ₪${p} · ${n}`,
+    scanningProduct: 'מזהה מוצר...',
+    productDetected: (n) => `זוהה מוצר: ${n}`,
+    productScanFail: 'לא זוהה מוצר — הכנס ידנית',
+    scanSub: 'אנא המתן',
+    scanning2: 'מזהה...',
+    added: 'נוסף לעגלה ✓',
+    deleted: 'פריט הוסר',
+    saved: 'נשמר ✓',
+    resetConfirm: 'לאפס את כל העגלה?',
+    resetDone: 'העגלה אופסה',
+    missingPrice: 'נא להכניס מחיר',
+    budgetInfo: (used, total) => `₪${used.toFixed(2)} מתוך ₪${total.toFixed(2)}`,
+    budgetOver: (over) => `חרגת ב-₪${over.toFixed(2)}`,
+    unitPrice: (p) => `₪${p} ליחידה`,
+    qtyLabel: (q) => `× ${q}`,
+    dealInfo: (q, p) => `מבצע: ${q} ב-₪${p}`,
+    editSave: 'שמור',
+    editCancel: 'בטל',
+    editPrice: 'מחיר:',
+    editQty: 'כמות:',
+    editName: 'שם:',
+    item: 'מוצר',
+
+  },
+  en: {
+    appTitle: 'Cart Total',
+    panelTitle: 'Add Item',
+    camBtn: 'Scan Price Tag',
+    namePlaceholder: 'Item name (optional)',
+    dealToggle: 'Deal / Bundle?',
+    dealTitle: '⚡ Set Deal',
+    dealLabel1: 'Buy',
+    dealLabel2: 'for ₪',
+    addBtn: 'Add to Cart +',
+    sectionTitle: 'Items in Cart',
+    resetBtn: 'Reset All',
+    budgetLabel: 'Budget:',
+    itemsWord: (n) => n === 1 ? 'item in cart' : 'items in cart',
+    scanning: 'Scanning price...',
+    scanDone: (p) => `Detected: ₪${p}`,
+    scanFail: 'No price found — enter manually',
+    scanDoneWithName: (p, n) => `Detected: ₪${p} · ${n}`,
+    scanningProduct: 'Identifying product...',
+    productDetected: (n) => `Product: ${n}`,
+    productScanFail: 'Could not identify — enter manually',
+    scanSub: 'Please wait',
+    scanning2: 'Scanning...',
+    added: 'Added ✓',
+    deleted: 'Item removed',
+    saved: 'Saved ✓',
+    resetConfirm: 'Reset entire cart?',
+    resetDone: 'Cart reset',
+    missingPrice: 'Please enter a price',
+    budgetInfo: (used, total) => `₪${used.toFixed(2)} of ₪${total.toFixed(2)}`,
+    budgetOver: (over) => `Over budget by ₪${over.toFixed(2)}`,
+    unitPrice: (p) => `₪${p} each`,
+    qtyLabel: (q) => `× ${q}`,
+    dealInfo: (q, p) => `Deal: ${q} for ₪${p}`,
+    editSave: 'Save',
+    editCancel: 'Cancel',
+    editPrice: 'Price:',
+    editQty: 'Qty:',
+    editName: 'Name:',
+    item: 'Item',
+
+  }
+};
+
+function t(key, ...args) {
+  const v = T[lang][key];
+  return typeof v === 'function' ? v(...args) : v;
+}
+
+// ─── LANG ─────────────────────────────────────────────────────────────────────
+function toggleLang() {
+  lang = lang === 'he' ? 'en' : 'he';
+  localStorage.setItem('cartLang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+  document.getElementById('langBtn').textContent = lang === 'he' ? 'EN' : 'עב';
+  applyLang();
+  renderItems();
+  updateTotal();
+}
+
+function applyLang() {
+  document.getElementById('appTitle').textContent = t('appTitle');
+  document.getElementById('panelTitle').textContent = t('panelTitle');
+  document.getElementById('camBtnText').textContent = t('camBtn');
+  document.getElementById('nameInput').placeholder = t('namePlaceholder');
+  document.getElementById('dealToggleText').textContent = t('dealToggle');
+  document.getElementById('productScanTxt').textContent = lang === 'he' ? 'צלם מוצר לזיהוי שם' : 'Scan product for name';
+  document.getElementById('dealSectionTitle').textContent = t('dealTitle');
+  document.getElementById('dealLabel1').textContent = t('dealLabel1');
+  document.getElementById('dealLabel2').textContent = t('dealLabel2');
+  document.getElementById('addBtnText').textContent = t('addBtn');
+  document.getElementById('sectionTitle').textContent = t('sectionTitle');
+  document.getElementById('resetBtn').textContent = t('resetBtn');
+  document.getElementById('budgetLabelText').textContent = t('budgetLabel');
+}
+
+// ─── OCR (Claude Vision) ─────────────────────────────────────────────────────
+async function handleImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+
+  const url = URL.createObjectURL(file);
+  document.getElementById('ocrImg').src = url;
+  document.getElementById('ocrPreview').classList.add('visible');
+
+  const statusEl = document.getElementById('ocrStatus');
+  statusEl.className = 'ocr-status scanning';
+  statusEl.textContent = t('scanning');
+  showLoading(t('scanning2'), t('scanSub'));
+
+  try {
+    const b64 = await toBase64(file);
+    const mediaType = file.type || 'image/jpeg';
+
+    const apiKey = localStorage.getItem('anthropicApiKey');
+    if (!apiKey) {
+      hideLoading();
+      statusEl.className = 'ocr-status error';
+      statusEl.textContent = lang === 'he' ? 'חסר API key — לחץ ⚙️ בפינה' : 'Missing API key — tap ⚙️';
+      document.getElementById('settingsPanel').style.display = 'block';
+      return;
+    }
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 150,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
+            { type: 'text', text: 'This is a supermarket image. Extract the price and product name if visible. Reply ONLY in this exact format:\nPRICE: [number or NONE]\nNAME: [product name in Hebrew if visible, or NONE]' }
+          ]
+        }]
+      })
+    });
+
+    hideLoading();
+    const data = await resp.json();
+    const raw = (data.content?.[0]?.text || '').trim();
+
+    const priceMatch = raw.match(/PRICE:\s*([\d.,]+|NONE)/i);
+    const nameMatch  = raw.match(/NAME:\s*(.+)/i);
+
+    const priceRaw = priceMatch ? priceMatch[1].trim() : 'NONE';
+    const nameRaw  = nameMatch  ? nameMatch[1].trim()  : 'NONE';
+
+    const price = parseFloat(priceRaw.replace(',', '.'));
+    const hasPrice = !isNaN(price) && price > 0 && priceRaw !== 'NONE';
+    const hasName  = nameRaw && nameRaw !== 'NONE';
+
+    if (hasPrice) {
+      document.getElementById('priceInput').value = price.toFixed(2);
+      if (hasName) {
+        document.getElementById('nameInput').value = nameRaw;
+        statusEl.className = 'ocr-status done';
+        statusEl.textContent = t('scanDoneWithName', price.toFixed(2), nameRaw);
+        document.getElementById('productScanBtn').style.display = 'none';
+      } else {
+        statusEl.className = 'ocr-status done';
+        statusEl.textContent = t('scanDone', price.toFixed(2));
+        document.getElementById('productScanBtn').style.display = 'flex';
+      }
+      showToast(t('scanDone', price.toFixed(2)));
+    } else {
+      statusEl.className = 'ocr-status error';
+      statusEl.textContent = t('scanFail');
+      document.getElementById('productScanBtn').style.display = 'none';
+    }
+  } catch(e) {
+    hideLoading();
+    statusEl.className = 'ocr-status error';
+    statusEl.textContent = t('scanFail');
+    document.getElementById('productScanBtn').style.display = 'none';
+  }
+}
+
+async function handleProductImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+
+  showLoading(t('scanningProduct'), t('scanSub'));
+
+  try {
+    const b64 = await toBase64(file);
+    const mediaType = file.type || 'image/jpeg';
+
+    const apiKey = localStorage.getItem('anthropicApiKey');
+    if (!apiKey) {
+      hideLoading();
+      showToast(lang === 'he' ? 'חסר API key — לחץ ⚙️' : 'Missing API key — tap ⚙️', true);
+      document.getElementById('settingsPanel').style.display = 'block';
+      return;
+    }
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 80,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
+            { type: 'text', text: 'This is a supermarket product. What is the product name in Hebrew? Reply with ONLY the product name (e.g. גבינה צהובה 28%, שמן זית כתית), nothing else. If you cannot identify it, reply NONE.' }
+          ]
+        }]
+      })
+    });
+
+    hideLoading();
+    const data = await resp.json();
+    const raw = (data.content?.[0]?.text || '').trim();
+
+    if (raw && raw !== 'NONE') {
+      document.getElementById('nameInput').value = raw;
+      document.getElementById('productScanBtn').style.display = 'none';
+      const statusEl = document.getElementById('ocrStatus');
+      statusEl.className = 'ocr-status done';
+      statusEl.textContent = t('productDetected', raw);
+      showToast(t('productDetected', raw));
+    } else {
+      showToast(t('productScanFail'), true);
+    }
+  } catch(e) {
+    hideLoading();
+    showToast(t('productScanFail'), true);
+  }
+}
+
+function toBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+// ─── DEAL TOGGLE ─────────────────────────────────────────────────────────────
+function toggleDeal() {
+  const price = parseFloat(document.getElementById('priceInput').value);
+  if (!price || price <= 0) {
+    showToast(t('missingPrice'), true);
+    document.getElementById('priceInput').focus();
+    return;
+  }
+  dealMode = !dealMode;
+  document.getElementById('dealSection').classList.toggle('visible', dealMode);
+  document.getElementById('dealToggleBtn').classList.toggle('active', dealMode);
+}
+
+// ─── ADD ITEM ─────────────────────────────────────────────────────────────────
+function addItem() {
+  const price = parseFloat(document.getElementById('priceInput').value);
+  if (!price || price <= 0) {
+    showToast(t('missingPrice'), true);
+    document.getElementById('priceInput').focus();
+    return;
+  }
+
+  const qty = parseInt(document.getElementById('qtyInput').value) || 1;
+  const name = document.getElementById('nameInput').value.trim() || `${t('item')} ${items.length + 1}`;
+
+  let itemPrice = price * qty;
+  let dealInfo = null;
+
+  if (dealMode) {
+    const dealQty = parseInt(document.getElementById('dealQty').value) || 2;
+    const dealPrice = parseFloat(document.getElementById('dealPrice').value);
+    if (dealPrice > 0) {
+      const bundles = Math.floor(qty / dealQty);
+      const remainder = qty % dealQty;
+      itemPrice = bundles * dealPrice + remainder * price;
+      dealInfo = { qty: dealQty, price: dealPrice };
+    }
+  }
+
+  const item = {
+    id: Date.now(),
+    name,
+    unitPrice: price,
+    qty,
+    totalPrice: itemPrice,
+    deal: dealInfo,
+  };
+
+  items.unshift(item);
+  saveItems();
+  renderItems();
+  updateTotal();
+  clearForm();
+  showToast(t('added'));
+}
+
+function clearForm() {
+  document.getElementById('priceInput').value = '';
+  document.getElementById('qtyInput').value = '1';
+  document.getElementById('nameInput').value = '';
+  document.getElementById('ocrPreview').classList.remove('visible');
+  document.getElementById('productScanBtn').style.display = 'none';
+  document.getElementById('dealPrice').value = '';
+  document.getElementById('dealQty').value = '2';
+  if (dealMode) toggleDeal();
+}
+
+// ─── EDIT ────────────────────────────────────────────────────────────────────
+function startEdit(id) {
+  // Close any open edit
+  document.querySelectorAll('.item-card.editing').forEach(el => el.classList.remove('editing'));
+  editingId = id;
+  const card = document.getElementById('card-' + id);
+  card.classList.add('editing');
+  const item = items.find(i => i.id === id);
+  document.getElementById('edit-name-' + id).value = item.name;
+  document.getElementById('edit-price-' + id).value = item.unitPrice;
+  document.getElementById('edit-qty-' + id).value = item.qty;
+}
+
+function saveEdit(id) {
+  const item = items.find(i => i.id === id);
+  const newName = document.getElementById('edit-name-' + id).value.trim();
+  const newPrice = parseFloat(document.getElementById('edit-price-' + id).value);
+  const newQty = parseInt(document.getElementById('edit-qty-' + id).value) || 1;
+
+  if (!newPrice || newPrice <= 0) return;
+
+  item.name = newName || item.name;
+  item.unitPrice = newPrice;
+  item.qty = newQty;
+  item.totalPrice = newPrice * newQty;
+  item.deal = null; // reset deal on edit
+
+  saveItems();
+  renderItems();
+  updateTotal();
+  showToast(t('saved'));
+}
+
+function cancelEdit(id) {
+  document.getElementById('card-' + id).classList.remove('editing');
+  editingId = null;
+}
+
+// ─── DELETE ──────────────────────────────────────────────────────────────────
+function deleteItem(id) {
+  items = items.filter(i => i.id !== id);
+  saveItems();
+  renderItems();
+  updateTotal();
+  showToast(t('deleted'));
+}
+
+// ─── RESET ───────────────────────────────────────────────────────────────────
+function confirmReset() {
+  if (items.length === 0) return;
+  const modal = document.getElementById('resetModal');
+  document.getElementById('modalTitle').textContent = lang === 'he' ? 'איפוס עגלה' : 'Reset Cart';
+  document.getElementById('modalBody').textContent = lang === 'he' ? 'כל הפריטים יימחקו. האם להמשיך?' : 'All items will be deleted. Continue?';
+  document.getElementById('modalCancel').textContent = lang === 'he' ? 'ביטול' : 'Cancel';
+  document.getElementById('modalConfirm').textContent = lang === 'he' ? 'אפס' : 'Reset';
+  modal.style.display = 'flex';
+}
+
+function closeResetModal() {
+  document.getElementById('resetModal').style.display = 'none';
+}
+
+function doReset() {
+  closeResetModal();
+  items = [];
+  saveItems();
+  renderItems();
+  updateTotal();
+  showToast(t('resetDone'));
+}
+
+// ─── BUDGET ──────────────────────────────────────────────────────────────────
+let budgetMode = localStorage.getItem('cartBudgetMode') || 'limit';
+
+function setBudgetMode(mode) {
+  budgetMode = mode;
+  lastBudgetState = null;
+  localStorage.setItem('cartBudgetMode', mode);
+  updateBudgetTabs();
+  updateTotal();
+}
+
+function updateBudgetTabs() {
+  const tl = document.getElementById('tabLimit');
+  const tg = document.getElementById('tabGoal');
+  tl.className = 'budget-tab' + (budgetMode === 'limit' ? ' active-limit' : '');
+  tg.className = 'budget-tab' + (budgetMode === 'goal'  ? ' active-goal'  : '');
+}
+
+function updateBudget() {
+  budget = parseFloat(document.getElementById('budgetInput').value) || 0;
+  localStorage.setItem('cartBudget', budget);
+  updateTotal();
+}
+
+function clearBudget() {
+  budget = 0;
+  document.getElementById('budgetInput').value = '';
+  localStorage.setItem('cartBudget', 0);
+  updateTotal();
+}
+
+// ─── SOUNDS ──────────────────────────────────────────────────────────────────
+let lastBudgetState = null;
+
+function playSound(type) {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (type === 'alert') {
+    // שני ביפים יורדים — אזהרה
+    [0, 0.25].forEach((delay, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 520 - i * 80;
+      o.type = 'square';
+      g.gain.setValueAtTime(0.18, ctx.currentTime + delay);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.18);
+      o.start(ctx.currentTime + delay);
+      o.stop(ctx.currentTime + delay + 0.2);
+    });
+  } else if (type === 'success') {
+    // שלושה צלילים עולים — הצלחה
+    [0, 0.15, 0.3].forEach((delay, i) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value = 440 + i * 130;
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.15, ctx.currentTime + delay);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.22);
+      o.start(ctx.currentTime + delay);
+      o.stop(ctx.currentTime + delay + 0.25);
+    });
+  }
+}
+
+// ─── TOTAL ───────────────────────────────────────────────────────────────────
+function updateTotal() {
+  const total = items.reduce((s, i) => s + i.totalPrice, 0);
+  document.getElementById('totalDisplay').textContent = total.toFixed(2);
+  document.getElementById('itemCount').textContent = items.length + ' ' + t('itemsWord', items.length);
+
+  const budgetWrap = document.getElementById('budgetBarWrap');
+  if (budget > 0) {
+    budgetWrap.classList.add('visible');
+    const pct = Math.min((total / budget) * 100, 100);
+    const fill = document.getElementById('budgetFill');
+    fill.style.width = pct + '%';
+    if (budgetMode === 'limit') {
+      const isOver = total >= budget;
+      fill.className = 'budget-fill' + (pct >= 100 ? ' over' : pct >= 80 ? ' warn' : '');
+      const over = total - budget;
+      const remaining = budget - total;
+      document.getElementById('budgetLabel').textContent = over > 0
+        ? (lang === 'he' ? `חרגת ב-₪${over.toFixed(2)}` : `Over by ₪${over.toFixed(2)}`)
+        : (lang === 'he' ? `נותר ₪${remaining.toFixed(2)} מתוך ₪${budget.toFixed(2)}` : `₪${remaining.toFixed(2)} left of ₪${budget.toFixed(2)}`);
+      if (isOver && lastBudgetState !== 'over') playSound('alert');
+      lastBudgetState = isOver ? 'over' : 'ok';
+    } else {
+      const isReached = total >= budget;
+      fill.className = 'budget-fill' + (pct >= 100 ? '' : pct >= 60 ? ' warn' : ' over');
+      const diff = budget - total;
+      document.getElementById('budgetLabel').textContent = diff > 0
+        ? (lang === 'he' ? `חסר עוד ₪${diff.toFixed(2)} להגיע ליעד` : `₪${diff.toFixed(2)} more to reach goal`)
+        : (lang === 'he' ? `הגעת ליעד! ₪${total.toFixed(2)} / ₪${budget.toFixed(2)} ✓` : `Goal reached! ₪${total.toFixed(2)} / ₪${budget.toFixed(2)} ✓`);
+      if (isReached && lastBudgetState !== 'reached') playSound('success');
+      lastBudgetState = isReached ? 'reached' : 'ok';
+    }
+  } else {
+    budgetWrap.classList.remove('visible');
+    lastBudgetState = null;
+  }
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function renderItems() {
+  const list = document.getElementById('itemsList');
+  if (!items.length) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🛒</div>
+        <div class="empty-text">${lang === 'he' ? 'העגלה ריקה' : 'Cart is empty'}</div>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = items.map((item, idx) => {
+    const dealBadge = item.deal
+      ? `<span class="deal-badge">🏷 ${t('dealInfo', item.deal.qty, item.deal.price)}</span>`
+      : '';
+    const unitNote = item.qty > 1
+      ? `<span class="item-unit-price">${t('unitPrice', item.unitPrice.toFixed(2))} ${t('qtyLabel', item.qty)}</span>`
+      : '';
+
+    return `
+      <div class="item-card" id="card-${item.id}">
+        <div class="item-num">${items.length - idx}</div>
+        <div class="item-body">
+          <div class="item-display">
+            <div class="item-name">${escHtml(item.name)}</div>
+            <div class="item-detail">${dealBadge}</div>
+            <div class="item-price-row">
+              <span class="item-total-price">₪${item.totalPrice.toFixed(2)}</span>
+              ${unitNote}
+            </div>
+          </div>
+          <div class="item-edit-area">
+            <div class="edit-row">
+              <label>${t('editName')}</label>
+              <input type="text" id="edit-name-${item.id}" value="${escHtml(item.name)}" dir="rtl"/>
+            </div>
+            <div class="edit-row">
+              <label>${t('editPrice')}</label>
+              <input type="number" id="edit-price-${item.id}" value="${item.unitPrice}" min="0" step="0.01"/>
+            </div>
+            <div class="edit-row">
+              <label>${t('editQty')}</label>
+              <input type="number" id="edit-qty-${item.id}" value="${item.qty}" min="1" step="1"/>
+            </div>
+            <div class="edit-actions">
+              <button class="edit-save" onclick="saveEdit(${item.id})">${t('editSave')}</button>
+              <button class="edit-cancel" onclick="cancelEdit(${item.id})">${t('editCancel')}</button>
+            </div>
+          </div>
+        </div>
+        <div class="item-actions">
+          <button class="action-btn" onclick="startEdit(${item.id})" title="${lang === 'he' ? 'ערוך' : 'Edit'}">✏️</button>
+          <button class="action-btn delete" onclick="deleteItem(${item.id})" title="${lang === 'he' ? 'מחק' : 'Delete'}">🗑</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function saveItems() {
+  localStorage.setItem('cartItems', JSON.stringify(items));
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function showToast(msg, warn = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (warn ? ' warn' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = 'toast', 2200);
+}
+
+function showLoading(text, sub) {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loadingSubText').textContent = sub;
+  document.getElementById('loadingOverlay').classList.add('visible');
+}
+
+function hideLoading() {
+  document.getElementById('loadingOverlay').classList.remove('visible');
+}
+
+// ─── SETTINGS ────────────────────────────────────────────────────────────────
+function toggleSettings() {
+  const panel = document.getElementById('settingsPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  if (panel.style.display === 'block') {
+    const saved = localStorage.getItem('anthropicApiKey') || '';
+    document.getElementById('apiKeyInput').value = saved;
+    updateApiKeyStatus();
+  }
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (key) {
+    localStorage.setItem('anthropicApiKey', key);
+    updateApiKeyStatus();
+    showToast(lang === 'he' ? 'API key נשמר ✓' : 'API key saved ✓');
+    setTimeout(() => document.getElementById('settingsPanel').style.display = 'none', 800);
+  }
+}
+
+function updateApiKeyStatus() {
+  const key = localStorage.getItem('anthropicApiKey');
+  const el = document.getElementById('apiKeyStatus');
+  if (key) {
+    el.textContent = (lang === 'he' ? 'מפתח שמור: ' : 'Saved key: ') + key.slice(0,12) + '...';
+    el.style.color = 'var(--green-mid)';
+  } else {
+    el.textContent = lang === 'he' ? 'אין מפתח שמור' : 'No key saved';
+    el.style.color = 'var(--text-muted)';
+  }
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+(function init() {
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
+  document.getElementById('langBtn').textContent = lang === 'he' ? 'EN' : 'עב';
+  if (budget > 0) document.getElementById('budgetInput').value = budget;
+  updateBudgetTabs();
+  applyLang();
+  renderItems();
+  updateTotal();
+
+})();
+</script>
+</body>
+</html>
