@@ -226,6 +226,55 @@
     font-size: 18px;
   }
 
+  /* Weight toggle */
+  .weight-toggle-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+  .weight-toggle-btn.visible { display: flex; }
+  .weight-toggle-btn.active { border-color: #2980b9; background: #eaf4fb; color: #1a6091; }
+
+  .weight-section {
+    display: none;
+    background: #eaf4fb;
+    border: 1.5px solid #2980b9;
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    margin-bottom: 8px;
+    animation: slideDown 0.2s ease;
+  }
+  .weight-section.visible { display: block; }
+  .weight-title { font-size: 12px; font-weight: 600; color: #1a6091; margin-bottom: 10px; }
+  .weight-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .weight-row span { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+  .weight-row input { width: 90px; }
+  .weight-scan-btn {
+    padding: 6px 12px;
+    background: #2980b9;
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
   /* Deal toggle */
   .deal-toggle-btn {
     background: none;
@@ -355,6 +404,54 @@
     padding: 4px;
     flex-shrink: 0;
   }
+
+  /* SAVED LISTS */
+  .saved-lists-panel {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 14px;
+  }
+  .saved-list-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .saved-list-item:last-child { border-bottom: none; }
+  .saved-list-name { flex: 1; font-size: 14px; font-weight: 600; }
+  .saved-list-meta { font-size: 12px; color: var(--text-muted); }
+  .saved-list-actions { display: flex; gap: 6px; }
+  .slist-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .slist-btn.load { border-color: var(--green-light); color: var(--green); }
+  .slist-btn.del:hover { border-color: var(--red); color: var(--red); }
+  .save-cart-btn {
+    width: 100%;
+    padding: 10px;
+    background: none;
+    border: 1.5px dashed var(--green-light);
+    border-radius: var(--radius-sm);
+    color: var(--green-mid);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    margin-top: 10px;
+  }
+  .save-cart-btn:hover { background: var(--green-pale); }
 
   /* ITEMS LIST */
   .items-section { margin-bottom: 14px; }
@@ -593,6 +690,18 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- Save cart modal -->
+<div id="saveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border-radius:var(--radius);padding:24px 20px;max-width:300px;width:90%;margin:0 auto">
+    <div style="font-size:16px;font-weight:700;margin-bottom:14px" id="saveModalTitle">💾 שמור רשימה</div>
+    <input type="text" id="saveNameInput" placeholder="שם הרשימה (למשל: שישי 14/3)" dir="rtl" style="width:100%;margin-bottom:14px;font-size:14px"/>
+    <div style="display:flex;gap:10px">
+      <button onclick="closeSaveModal()" style="flex:1;padding:11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:none;font-size:14px;cursor:pointer;font-family:inherit;color:var(--text-muted)" id="saveCancelBtn">ביטול</button>
+      <button onclick="confirmSaveCart()" style="flex:1;padding:11px;border:none;border-radius:var(--radius-sm);background:var(--green);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit" id="saveConfirmBtn">שמור</button>
+    </div>
+  </div>
+</div>
+
 <!-- Reset confirm modal -->
 <div id="resetModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400;align-items:center;justify-content:center">
   <div style="background:var(--bg-card);border-radius:var(--radius);padding:24px 20px;max-width:280px;width:88%;margin:0 auto;text-align:center">
@@ -713,10 +822,40 @@
       </div>
     </div>
 
+    <!-- Weight toggle (shown after price tag scan with price/kg) -->
+    <input type="file" id="weightFileInput" accept="image/*" capture="environment" style="display:none" onchange="handleWeightImage(event)" />
+    <button class="weight-toggle-btn" id="weightToggleBtn" onclick="toggleWeight()">
+      <span>⚖️</span>
+      <span id="weightToggleText">פריט במשקל?</span>
+    </button>
+    <div class="weight-section" id="weightSection">
+      <div class="weight-title" id="weightTitle">⚖️ מחיר לק"ג — הערכת משקל</div>
+      <div class="weight-row">
+        <span id="weightLabel1">משקל משוער:</span>
+        <input type="number" id="weightInput" placeholder="0.000" min="0" step="0.001" oninput="updateWeightTotal()" />
+        <span id="weightLabel2">ק"ג</span>
+        <button class="weight-scan-btn" onclick="document.getElementById('weightFileInput').click()">
+          <span>📷</span>
+          <span id="weightScanText">צלם מוצר</span>
+        </button>
+      </div>
+      <div id="weightEstimateNote" style="font-size:12px;color:#1a6091;margin-top:8px;display:none"></div>
+      <div style="font-size:13px;font-weight:600;color:var(--green);margin-top:8px" id="weightTotalPreview"></div>
+    </div>
+
     <!-- Add -->
     <button class="add-btn" id="addBtn" onclick="addItem()">
       <span id="addBtnText">הוסף לעגלה +</span>
     </button>
+  </div>
+
+  <!-- Saved lists -->
+  <div class="saved-lists-panel" id="savedListsPanel">
+    <div class="section-header">
+      <div class="section-title" id="savedListsTitle">רשימות שמורות</div>
+    </div>
+    <div id="savedListsContainer"></div>
+    <button class="save-cart-btn" id="saveCartBtn" onclick="saveCurrentCart()">💾 שמור עגלה נוכחית</button>
   </div>
 
   <!-- Items list -->
@@ -758,6 +897,25 @@ const T = {
     scanning: 'סורק מחיר...',
     scanDone: (p) => `זיהוי: ₪${p}`,
     scanFail: 'לא זוהה מחיר — הכנס ידנית',
+    weightToggle: 'פריט במשקל?',
+    weightTitle: '⚖️ מחיר לק"ג — הערכת משקל',
+    weightLabel1: 'משקל משוער:',
+    weightLabel2: 'ק"ג',
+    weightScan: 'צלם מוצר',
+    weightEstimate: (w) => `הערכת Claude: ~${w} ק"ג`,
+    weightScanFail: 'לא הוערך — הכנס ידנית',
+    weightTotal: (t) => `סה"כ משוער: ₪${t}`,
+    savedListsTitle: 'רשימות שמורות',
+    saveCartBtn: '💾 שמור עגלה נוכחית',
+    saveModalTitle: '💾 שמור רשימה',
+    savePlaceholder: 'שם הרשימה (למשל: שישי 14/3)',
+    loadList: 'טען',
+    deleteList: 'מחק',
+    listSaved: 'הרשימה נשמרה ✓',
+    listLoaded: 'הרשימה נטענה ✓',
+    listDeleted: 'הרשימה נמחקה',
+    emptyCartSave: 'העגלה ריקה — אין מה לשמור',
+    perKg: 'לק"ג',
     scanDoneWithName: (p, n) => `זוהה: ₪${p} · ${n}`,
     scanningProduct: 'מזהה מוצר...',
     productDetected: (n) => `זוהה מוצר: ${n}`,
@@ -800,6 +958,25 @@ const T = {
     scanning: 'Scanning price...',
     scanDone: (p) => `Detected: ₪${p}`,
     scanFail: 'No price found — enter manually',
+    weightToggle: 'Sold by weight?',
+    weightTitle: '⚖️ Price per kg — weight estimate',
+    weightLabel1: 'Estimated weight:',
+    weightLabel2: 'kg',
+    weightScan: 'Scan product',
+    weightEstimate: (w) => `Claude estimate: ~${w} kg`,
+    weightScanFail: 'Could not estimate — enter manually',
+    weightTotal: (t) => `Estimated total: ₪${t}`,
+    savedListsTitle: 'Saved Lists',
+    saveCartBtn: '💾 Save current cart',
+    saveModalTitle: '💾 Save list',
+    savePlaceholder: 'List name (e.g. Friday 14/3)',
+    loadList: 'Load',
+    deleteList: 'Delete',
+    listSaved: 'List saved ✓',
+    listLoaded: 'List loaded ✓',
+    listDeleted: 'List deleted',
+    emptyCartSave: 'Cart is empty — nothing to save',
+    perKg: '/kg',
     scanDoneWithName: (p, n) => `Detected: ₪${p} · ${n}`,
     scanningProduct: 'Identifying product...',
     productDetected: (n) => `Product: ${n}`,
@@ -841,6 +1018,7 @@ function toggleLang() {
   document.getElementById('langBtn').textContent = lang === 'he' ? 'EN' : 'עב';
   applyLang();
   renderItems();
+  renderSavedLists();
   updateTotal();
 }
 
@@ -851,6 +1029,12 @@ function applyLang() {
   document.getElementById('nameInput').placeholder = t('namePlaceholder');
   document.getElementById('dealToggleText').textContent = t('dealToggle');
   document.getElementById('productScanTxt').textContent = lang === 'he' ? 'צלם מוצר לזיהוי שם' : 'Scan product for name';
+  document.getElementById('weightToggleText').textContent = t('weightToggle');
+  document.getElementById('weightTitle').textContent = t('weightTitle');
+  document.getElementById('weightLabel1').textContent = t('weightLabel1');
+  document.getElementById('weightLabel2').textContent = t('weightLabel2');
+  document.getElementById('weightScanText').textContent = t('weightScan');
+  renderSavedLists();
   document.getElementById('dealSectionTitle').textContent = t('dealTitle');
   document.getElementById('dealLabel1').textContent = t('dealLabel1');
   document.getElementById('dealLabel2').textContent = t('dealLabel2');
@@ -929,6 +1113,8 @@ async function handleImage(event) {
         statusEl.textContent = t('scanDone', price.toFixed(2));
         document.getElementById('productScanBtn').style.display = 'flex';
       }
+      // Show weight toggle for per-kg items
+      document.getElementById('weightToggleBtn').classList.add('visible');
       showToast(t('scanDone', price.toFixed(2)));
     } else {
       statusEl.className = 'ocr-status error';
@@ -1031,6 +1217,26 @@ function addItem() {
   const qty = parseInt(document.getElementById('qtyInput').value) || 1;
   const name = document.getElementById('nameInput').value.trim() || `${t('item')} ${items.length + 1}`;
 
+  // Weight mode overrides qty
+  if (weightMode) {
+    const kg = parseFloat(document.getElementById('weightInput').value);
+    if (kg > 0) {
+      const total = (price * kg).toFixed(2);
+      const name2 = document.getElementById('nameInput').value.trim() || (lang==='he'?'פריט במשקל':'By weight item')+' '+(items.length+1);
+      items.unshift({
+        id: Date.now(), name: name2,
+        unitPrice: price, qty: 1,
+        totalPrice: parseFloat(total),
+        deal: null,
+        weightKg: kg,
+        perKg: true
+      });
+      saveItems(); renderItems(); updateTotal(); clearForm();
+      showToast(t('added'));
+      return;
+    }
+  }
+
   let itemPrice = price * qty;
   let dealInfo = null;
 
@@ -1068,8 +1274,12 @@ function clearForm() {
   document.getElementById('nameInput').value = '';
   document.getElementById('ocrPreview').classList.remove('visible');
   document.getElementById('productScanBtn').style.display = 'none';
+  document.getElementById('weightToggleBtn').classList.remove('visible');
+  document.getElementById('weightEstimateNote').style.display = 'none';
+  document.getElementById('weightTotalPreview').textContent = '';
   document.getElementById('dealPrice').value = '';
   document.getElementById('dealQty').value = '2';
+  if (weightMode) toggleWeight();
   if (dealMode) toggleDeal();
 }
 
@@ -1273,7 +1483,7 @@ function renderItems() {
         <div class="item-body">
           <div class="item-display">
             <div class="item-name">${escHtml(item.name)}</div>
-            <div class="item-detail">${dealBadge}</div>
+            <div class="item-detail">${dealBadge}${item.perKg ? `<span class="deal-badge">⚖️ ${item.weightKg}ק"ג · ₪${item.unitPrice}${t('perKg')}</span>` : ''}</div>
             <div class="item-price-row">
               <span class="item-total-price">₪${item.totalPrice.toFixed(2)}</span>
               ${unitNote}
@@ -1334,6 +1544,178 @@ function hideLoading() {
   document.getElementById('loadingOverlay').classList.remove('visible');
 }
 
+// ─── WEIGHT (price per kg) ───────────────────────────────────────────────────
+let weightMode = false;
+let pricePerKg = 0;
+
+function toggleWeight() {
+  weightMode = !weightMode;
+  document.getElementById('weightSection').classList.toggle('visible', weightMode);
+  document.getElementById('weightToggleBtn').classList.toggle('active', weightMode);
+  if (!weightMode) {
+    document.getElementById('weightInput').value = '';
+    document.getElementById('weightTotalPreview').textContent = '';
+    document.getElementById('weightEstimateNote').style.display = 'none';
+  }
+}
+
+function updateWeightTotal() {
+  const kg = parseFloat(document.getElementById('weightInput').value) || 0;
+  const price = parseFloat(document.getElementById('priceInput').value) || 0;
+  if (kg > 0 && price > 0) {
+    const total = (kg * price).toFixed(2);
+    document.getElementById('weightTotalPreview').textContent = t('weightTotal', total);
+  } else {
+    document.getElementById('weightTotalPreview').textContent = '';
+  }
+}
+
+async function handleWeightImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+
+  showLoading(t('scanning2'), t('scanSub'));
+
+  try {
+    const b64 = await toBase64(file);
+    const mediaType = file.type || 'image/jpeg';
+    const apiKey = localStorage.getItem('anthropicApiKey');
+    if (!apiKey) { hideLoading(); showToast(lang === 'he' ? 'חסר API key' : 'Missing API key', true); return; }
+
+    const priceKg = parseFloat(document.getElementById('priceInput').value) || 0;
+    const prompt = `This is a photo of a supermarket product sold by weight (price per kg: ₪${priceKg}). 
+Estimate the total weight in kg based on what you see (number of items, typical size). 
+Reply ONLY in this format:
+WEIGHT: [number in kg, e.g. 0.650]
+REASON: [one short sentence in Hebrew explaining the estimate]`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 100,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
+          { type: 'text', text: prompt }
+        ]}]
+      })
+    });
+
+    hideLoading();
+    const data = await resp.json();
+    const raw = (data.content?.[0]?.text || '').trim();
+    const weightMatch = raw.match(/WEIGHT:\s*([\d.]+)/i);
+    const reasonMatch = raw.match(/REASON:\s*(.+)/i);
+
+    if (weightMatch) {
+      const w = parseFloat(weightMatch[1]);
+      document.getElementById('weightInput').value = w.toFixed(3);
+      updateWeightTotal();
+      const noteEl = document.getElementById('weightEstimateNote');
+      noteEl.style.display = 'block';
+      noteEl.textContent = (reasonMatch ? reasonMatch[1].trim() + ' · ' : '') + t('weightEstimate', w.toFixed(3));
+      showToast(t('weightEstimate', w.toFixed(3)));
+    } else {
+      showToast(t('weightScanFail'), true);
+    }
+  } catch(e) {
+    hideLoading();
+    showToast(t('weightScanFail'), true);
+  }
+}
+
+// ─── SAVED LISTS ──────────────────────────────────────────────────────────────
+function getSavedLists() {
+  return JSON.parse(localStorage.getItem('cartSavedLists') || '[]');
+}
+
+function saveSavedLists(lists) {
+  localStorage.setItem('cartSavedLists', JSON.stringify(lists));
+}
+
+function saveCurrentCart() {
+  if (items.length === 0) { showToast(t('emptyCartSave'), true); return; }
+  const modal = document.getElementById('saveModal');
+  document.getElementById('saveModalTitle').textContent = t('saveModalTitle');
+  document.getElementById('saveNameInput').placeholder = t('savePlaceholder');
+  document.getElementById('saveNameInput').value = '';
+  document.getElementById('saveCancelBtn').textContent = lang === 'he' ? 'ביטול' : 'Cancel';
+  document.getElementById('saveConfirmBtn').textContent = lang === 'he' ? 'שמור' : 'Save';
+  modal.style.display = 'flex';
+  setTimeout(() => document.getElementById('saveNameInput').focus(), 100);
+}
+
+function closeSaveModal() {
+  document.getElementById('saveModal').style.display = 'none';
+}
+
+function confirmSaveCart() {
+  const name = document.getElementById('saveNameInput').value.trim();
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('he-IL', { day:'2-digit', month:'2-digit' });
+  const listName = name || (lang === 'he' ? `קנייה ${dateStr}` : `Shopping ${dateStr}`);
+  const lists = getSavedLists();
+  lists.unshift({
+    id: Date.now(),
+    name: listName,
+    date: now.toISOString(),
+    total: items.reduce((s,i) => s+i.totalPrice, 0).toFixed(2),
+    count: items.length,
+    items: JSON.parse(JSON.stringify(items))
+  });
+  saveSavedLists(lists);
+  closeSaveModal();
+  renderSavedLists();
+  showToast(t('listSaved'));
+}
+
+function loadList(id) {
+  const lists = getSavedLists();
+  const list = lists.find(l => l.id === id);
+  if (!list) return;
+  items = JSON.parse(JSON.stringify(list.items));
+  saveItems();
+  renderItems();
+  updateTotal();
+  showToast(t('listLoaded'));
+  window.scrollTo(0, 0);
+}
+
+function deleteList(id) {
+  const lists = getSavedLists().filter(l => l.id !== id);
+  saveSavedLists(lists);
+  renderSavedLists();
+  showToast(t('listDeleted'));
+}
+
+function renderSavedLists() {
+  const lists = getSavedLists();
+  const container = document.getElementById('savedListsContainer');
+  document.getElementById('savedListsTitle').textContent = t('savedListsTitle');
+  document.getElementById('saveCartBtn').textContent = t('saveCartBtn');
+
+  if (!lists.length) {
+    container.innerHTML = `<div style="font-size:13px;color:var(--text-muted);padding:8px 0">${lang === 'he' ? 'אין רשימות שמורות עדיין' : 'No saved lists yet'}</div>`;
+    return;
+  }
+
+  container.innerHTML = lists.map(list => {
+    const date = new Date(list.date).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-GB', { day:'2-digit', month:'2-digit', year:'2-digit' });
+    return `<div class="saved-list-item">
+      <div style="flex:1;min-width:0">
+        <div class="saved-list-name">${esc(list.name)}</div>
+        <div class="saved-list-meta">${date} · ${list.count} ${lang==='he'?'פריטים':'items'} · ₪${list.total}</div>
+      </div>
+      <div class="saved-list-actions">
+        <button class="slist-btn load" onclick="loadList(${list.id})">${t('loadList')}</button>
+        <button class="slist-btn del" onclick="deleteList(${list.id})">${t('deleteList')}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ─── SETTINGS ────────────────────────────────────────────────────────────────
 function toggleSettings() {
   const panel = document.getElementById('settingsPanel');
@@ -1376,6 +1758,7 @@ function updateApiKeyStatus() {
   updateBudgetTabs();
   applyLang();
   renderItems();
+  renderSavedLists();
   updateTotal();
 
 })();
