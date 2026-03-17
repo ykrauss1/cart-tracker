@@ -2,10 +2,11 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a472a">
-<title>כמה עלה עד עכשיו | Cart Total</title>
+<title>כמה עלה עד עכשיו</title>
 <style>
   :root {
     --green: #1a472a;
@@ -16,716 +17,530 @@
     --accent-dark: #e76f51;
     --text: #1b1b1b;
     --text-muted: #5a5a5a;
-    --bg: #f8f9f4;
+    --bg: #f2f4f0;
     --bg-card: #ffffff;
     --border: #e0e4dc;
     --red: #c0392b;
     --red-light: #fdecea;
-    --radius: 14px;
-    --radius-sm: 8px;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --tab-h: 68px;
+    --header-h: 130px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  body {
+  html, body {
+    height: 100%;
+    overflow: hidden;
     font-family: 'Segoe UI', 'Arial Hebrew', Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
-    min-height: 100vh;
-    padding-bottom: 120px;
   }
 
-  /* HEADER */
-  header {
+  /* ═══ LAYOUT SHELL ═══ */
+  .app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    height: 100dvh;
+  }
+
+  /* ═══ HEADER (fixed top) ═══ */
+  .app-header {
     background: var(--green);
     color: #fff;
-    padding: 16px 18px 12px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+    padding: 14px 16px 12px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.18);
   }
 
-  .header-top {
+  .header-row1 {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 10px;
+    align-items: center;
+    margin-bottom: 8px;
   }
 
-  .app-title { font-size: 13px; opacity: 0.75; font-weight: 400; }
-  .lang-btn {
+  .app-name { font-size: 13px; opacity: 0.7; font-weight: 400; }
+
+  .header-actions { display: flex; gap: 6px; align-items: center; }
+  .hdr-btn {
     background: rgba(255,255,255,0.15);
-    border: none;
-    color: #fff;
-    font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    cursor: pointer;
+    border: none; color: #fff;
+    font-size: 13px; padding: 5px 11px;
+    border-radius: 20px; cursor: pointer;
     transition: background 0.2s;
+    font-family: inherit;
   }
-  .lang-btn:hover { background: rgba(255,255,255,0.25); }
+  .hdr-btn:active { background: rgba(255,255,255,0.3); }
 
-  .total-display {
+  .total-row {
     display: flex;
     align-items: baseline;
-    gap: 6px;
+    gap: 5px;
   }
-  .total-amount {
-    font-size: 42px;
-    font-weight: 700;
-    letter-spacing: -1px;
-    line-height: 1;
+  .currency { font-size: 22px; font-weight: 300; opacity: 0.85; }
+  .total-amount { font-size: 46px; font-weight: 700; letter-spacing: -2px; line-height: 1; }
+  .item-count { font-size: 12px; opacity: 0.6; margin-top: 2px; }
+
+  /* Budget mode pill in header */
+  .budget-mode-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,0.13); border-radius: 20px;
+    padding: 3px 10px; font-size: 12px; font-weight: 600;
+    margin-top: 5px; cursor: pointer; transition: background 0.2s;
+    border: none; color: #fff; font-family: inherit;
   }
-  .currency { font-size: 20px; font-weight: 400; opacity: 0.8; }
-  .item-count { font-size: 13px; opacity: 0.65; margin-top: 2px; }
+  .budget-mode-pill:active { background: rgba(255,255,255,0.25); }
+  .budget-mode-pill.hidden { display: none; }
 
   /* Budget bar */
-  .budget-bar-wrap {
-    margin-top: 8px;
-    display: none;
-  }
+  .budget-bar-wrap { display: none; margin-top: 6px; }
   .budget-bar-wrap.visible { display: block; }
-  .budget-track {
-    height: 6px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-bottom: 4px;
-  }
-  .budget-fill {
-    height: 100%;
-    background: var(--green-light);
-    border-radius: 3px;
-    transition: width 0.4s ease, background 0.3s;
-  }
+  .budget-track { height: 5px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; margin-bottom: 3px; }
+  .budget-fill { height: 100%; background: var(--green-light); border-radius: 3px; transition: width 0.4s, background 0.3s; }
   .budget-fill.warn { background: #f4a261; }
   .budget-fill.over { background: #e74c3c; }
   .budget-label { font-size: 11px; opacity: 0.7; }
 
-  /* MAIN */
-  main { padding: 14px 14px 0; max-width: 600px; margin: 0 auto; }
+  /* ═══ SCROLLABLE CONTENT ═══ */
+  .app-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
 
-  /* ADD PANEL */
-  .add-panel {
+  .content-inner {
+    padding: 12px 12px 16px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* ═══ TAB SCREENS ═══ */
+  .tab-screen { display: none; }
+  .tab-screen.active { display: block; }
+
+  /* ═══ ITEMS LIST ═══ */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 0 2px;
+  }
+  .section-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .reset-btn {
+    font-size: 12px; color: var(--red); background: none; border: 1px solid var(--red);
+    border-radius: 20px; padding: 4px 10px; cursor: pointer; font-family: inherit;
+    transition: all 0.2s;
+  }
+  .reset-btn:active { background: var(--red-light); }
+
+  .item-card {
     background: var(--bg-card);
     border-radius: var(--radius);
-    padding: 16px;
+    padding: 13px 14px;
+    margin-bottom: 8px;
     border: 1px solid var(--border);
-    margin-bottom: 14px;
-  }
-
-  .panel-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 12px;
-  }
-
-  /* Camera button */
-  .cam-btn {
-    width: 100%;
-    padding: 14px;
-    background: var(--green);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: background 0.2s, transform 0.1s;
-    margin-bottom: 12px;
+    gap: 10px;
+    transition: box-shadow 0.2s;
   }
-  .cam-btn:hover { background: var(--green-mid); }
-  .cam-btn:active { transform: scale(0.98); }
+  .item-card.editing { border-color: var(--green-light); box-shadow: 0 0 0 2px rgba(82,183,136,0.2); }
 
-  .cam-icon { font-size: 20px; }
+  .item-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--green-pale); color: var(--green);
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
 
-  #fileInput { display: none; }
+  .item-body { flex: 1; min-width: 0; }
+  .item-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-detail { font-size: 12px; color: var(--text-muted); margin-bottom: 2px; }
+  .item-price-row { display: flex; align-items: baseline; gap: 6px; }
+  .item-total-price { font-size: 17px; font-weight: 700; color: var(--green); }
+  .item-unit-price { font-size: 11px; color: var(--text-muted); }
+
+  .item-edit-area { display: none; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+  .item-card.editing .item-edit-area { display: block; }
+  .item-card.editing .item-display { opacity: 0.5; }
+
+  .edit-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .edit-row label { font-size: 12px; color: var(--text-muted); width: 40px; flex-shrink: 0; }
+  .edit-row input { flex: 1; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; font-family: inherit; background: var(--bg); color: var(--text); }
+  .edit-row input:focus { outline: none; border-color: var(--green-light); }
+  .edit-actions { display: flex; gap: 8px; }
+  .edit-save { flex:1; padding: 9px; background: var(--green); color:#fff; border:none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  .edit-cancel { flex:1; padding: 9px; background: none; color: var(--text-muted); border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; font-family: inherit; }
+
+  .item-actions { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
+  .action-btn { background: none; border: none; font-size: 18px; cursor: pointer; padding: 3px; line-height: 1; opacity: 0.6; transition: opacity 0.15s; }
+  .action-btn:active { opacity: 1; transform: scale(1.15); }
+  .action-btn.delete:active { color: var(--red); }
+  .fav-star-btn { opacity: 0.35; }
+  .fav-star-btn.saved { opacity: 1; }
+
+  .empty-state { text-align: center; padding: 48px 20px; }
+  .empty-icon { font-size: 52px; margin-bottom: 12px; }
+  .empty-text { font-size: 16px; color: var(--text-muted); font-weight: 500; }
+  .empty-sub { font-size: 13px; color: var(--text-muted); margin-top: 6px; opacity: 0.7; }
+
+  /* Deal badge */
+  .deal-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: #fff3e8; color: var(--accent-dark);
+    border: 1px solid var(--accent); border-radius: 4px;
+    padding: 1px 6px; font-size: 11px; font-weight: 600; margin-left: 4px;
+  }
+
+  /* ═══ FAVORITES SCREEN ═══ */
+  .fav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 8px; cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .fav-item:active { border-color: var(--accent); background: #fff8f2; }
+  .fav-item-info { flex: 1; min-width: 0; }
+  .fav-item-name { font-size: 15px; font-weight: 600; }
+  .fav-item-price { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .fav-item-del { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; padding: 4px; line-height: 1; }
+  .fav-item-del:active { color: var(--red); }
+
+  /* ═══ SAVED LISTS SCREEN ═══ */
+  .saved-list-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 8px;
+  }
+  .saved-list-name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .saved-list-meta { font-size: 12px; color: var(--text-muted); }
+  .saved-list-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .slist-btn {
+    padding: 6px 12px; border-radius: 20px; font-size: 13px;
+    cursor: pointer; font-family: inherit; border: none; font-weight: 600;
+  }
+  .slist-btn.load { background: var(--green-pale); color: var(--green); }
+  .slist-btn.del { background: var(--red-light); color: var(--red); }
+  .slist-btn:active { opacity: 0.7; }
+
+  .save-cart-btn {
+    width: 100%; padding: 13px; background: var(--green-pale); color: var(--green);
+    border: 1.5px solid var(--green-light); border-radius: var(--radius-sm);
+    font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;
+    margin-top: 6px; transition: background 0.2s;
+  }
+  .save-cart-btn:active { background: var(--green-light); color: #fff; }
+
+  /* ═══ SETTINGS SCREEN ═══ */
+  .settings-card {
+    background: var(--bg-card); border-radius: var(--radius);
+    padding: 16px; border: 1px solid var(--border); margin-bottom: 12px;
+  }
+  .settings-card-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+
+  /* Budget mode */
+  .budget-mode-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .budget-tab {
+    flex: 1; padding: 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    background: none; font-size: 13px; font-family: inherit; cursor: pointer; color: var(--text-muted); text-align: center; transition: all 0.2s;
+  }
+  .budget-tab.active-limit { border-color: var(--red); background: #fff0ef; color: var(--red); font-weight: 600; }
+  .budget-tab.active-goal { border-color: var(--green-light); background: var(--green-pale); color: var(--green); font-weight: 600; }
+  .budget-input-row { display: flex; align-items: center; gap: 8px; }
+  .budget-label-text { font-size: 14px; color: var(--text-muted); flex-shrink: 0; }
+  .budget-input-wrap { position: relative; width: 130px; }
+  .budget-input-wrap::before { content: '₪'; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 15px; pointer-events: none; }
+  input[type="number"], input[type="text"] {
+    width: 100%; padding: 10px 28px 10px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 16px; font-family: inherit; color: var(--text); background: var(--bg); direction: ltr; text-align: left;
+    -webkit-appearance: none; appearance: none;
+  }
+  input[type="number"]:focus, input[type="text"]:focus { outline: none; border-color: var(--green-light); }
+  .budget-clear { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px; padding: 4px; }
+
+  /* API key */
+  .api-row { display: flex; gap: 8px; align-items: center; }
+  .api-row input { flex: 1; font-size: 13px; font-family: monospace; padding: 10px 12px; }
+  .api-save-btn { padding: 10px 14px; background: var(--green); color:#fff; border:none; border-radius: var(--radius-sm); font-size: 13px; cursor:pointer; white-space:nowrap; font-family:inherit; }
+  #apiKeyStatus { font-size: 12px; margin-top: 6px; color: var(--text-muted); }
+
+  /* Lang toggle */
+  .lang-toggle { display: flex; gap: 0; border: 1.5px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .lang-option { flex: 1; padding: 10px; text-align: center; font-size: 14px; font-weight: 600; cursor: pointer; border: none; background: none; font-family: inherit; color: var(--text-muted); transition: all 0.2s; }
+  .lang-option.active { background: var(--green); color: #fff; }
+
+  /* ═══ TAB BAR (fixed bottom) ═══ */
+  .tab-bar {
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    padding-bottom: var(--safe-bottom);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  }
+
+  .tab-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 4px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    gap: 4px;
+    position: relative;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab-btn:active { background: var(--bg); }
+
+  .tab-icon { font-size: 22px; line-height: 1; transition: transform 0.2s; }
+  .tab-label { font-size: 10px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.2px; font-family: inherit; }
+  .tab-btn.active .tab-label { color: var(--green); }
+  .tab-btn.active .tab-icon { transform: scale(1.1); }
+
+  .tab-badge {
+    position: absolute; top: 7px; right: calc(50% - 14px);
+    background: var(--accent); color: #fff;
+    font-size: 10px; font-weight: 700; min-width: 16px; height: 16px;
+    border-radius: 8px; padding: 0 4px; line-height: 16px; text-align: center;
+    display: none;
+  }
+  .tab-badge.visible { display: block; }
+
+  /* ➕ Center FAB button */
+  .tab-fab {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 4px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    gap: 4px;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fab-circle {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--green); color: #fff;
+    font-size: 28px; line-height: 52px; text-align: center;
+    box-shadow: 0 4px 16px rgba(26,71,42,0.4);
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: -18px;
+  }
+  .tab-fab:active .fab-circle { transform: scale(0.93); box-shadow: 0 2px 8px rgba(26,71,42,0.3); }
+  .fab-label { font-size: 10px; font-weight: 600; color: var(--green); font-family: inherit; }
+
+  /* ═══ BOTTOM SHEET (add item) ═══ */
+  .sheet-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 50;
+    backdrop-filter: blur(2px);
+  }
+  .sheet-overlay.open { display: block; }
+
+  .bottom-sheet {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--bg-card);
+    border-radius: 20px 20px 0 0;
+    z-index: 60;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    max-height: 92dvh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: var(--safe-bottom);
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.18);
+  }
+  .bottom-sheet.open { transform: translateY(0); }
+
+  .sheet-handle-area {
+    padding: 14px 16px 0;
+    text-align: center;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; display: inline-block; }
+
+  .sheet-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px 12px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .sheet-title { font-size: 16px; font-weight: 700; }
+  .sheet-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); padding: 4px; line-height: 1; }
+
+  .sheet-body { overflow-y: auto; padding: 16px; flex: 1; -webkit-overflow-scrolling: touch; }
+
+  /* Camera button in sheet */
+  .cam-btn {
+    width: 100%; padding: 18px 14px; background: var(--green); color: #fff; border: none;
+    border-radius: var(--radius-sm); font-size: 18px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: background 0.2s; margin-bottom: 14px; font-family: inherit;
+    letter-spacing: 0.2px;
+  }
+  .cam-btn .cam-icon-big { font-size: 24px; }
+  .cam-btn:active { background: var(--green-mid); transform: scale(0.98); }
+  .cam-btn.secondary { background: var(--green-mid); font-size: 16px; padding: 14px; }
+
+  #fileInput, #productFileInput, #weightFileInput { display: none; }
 
   /* OCR preview */
-  .ocr-preview {
-    display: none;
-    margin-bottom: 12px;
-    text-align: center;
-  }
+  .ocr-preview { display: none; margin-bottom: 12px; text-align: center; }
   .ocr-preview.visible { display: block; }
-  .ocr-preview img {
-    max-width: 100%;
-    max-height: 160px;
-    border-radius: var(--radius-sm);
-    object-fit: contain;
-    border: 1px solid var(--border);
-  }
-  .ocr-status {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin-top: 6px;
-  }
+  .ocr-preview img { max-width: 100%; max-height: 130px; border-radius: var(--radius-sm); object-fit: contain; border: 1px solid var(--border); }
+  .ocr-status { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
   .ocr-status.scanning { color: var(--green-mid); font-weight: 600; }
   .ocr-status.done { color: var(--green); font-weight: 600; }
   .ocr-status.error { color: var(--red); }
 
-  /* Price input row */
-  .price-row {
-    display: flex;
-    gap: 8px;
-    align-items: stretch;
-    margin-bottom: 8px;
-  }
+  /* Price row */
+  .price-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: stretch; }
+  .price-input-wrap { width: 140px; flex-shrink: 0; position: relative; }
+  .price-input-wrap::before { content: '₪'; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 15px; pointer-events: none; }
+  .qty-wrap { width: 74px; flex-shrink: 0; }
+  .qty-wrap input { text-align: center; padding: 10px 6px; }
 
-  .price-input-wrap {
-    width: 130px;
-    flex: none;
-    position: relative;
-  }
-  .price-input-wrap::before {
-    content: '₪';
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-    font-size: 15px;
-    pointer-events: none;
-  }
+  /* Name input */
+  .name-wrap { margin-bottom: 10px; }
+  .name-wrap input { direction: rtl; text-align: right; font-size: 15px; }
 
-  input[type="number"], input[type="text"] {
-    width: 100%;
-    padding: 11px 30px 11px 10px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 18px;
-    font-family: inherit;
-    color: var(--text);
-    background: var(--bg);
-    transition: border-color 0.2s;
-    text-align: left;
-    direction: ltr;
+  /* Toggle buttons */
+  .toggle-btn {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    background: none; font-size: 13px; font-family: inherit; cursor: pointer; color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 8px; transition: all 0.2s;
   }
-  input[type="number"]:focus, input[type="text"]:focus {
-    outline: none;
-    border-color: var(--green-light);
-  }
+  .toggle-btn.active-deal { border-color: var(--accent); background: #fff8f2; color: var(--accent-dark); }
+  .toggle-btn.active-weight { border-color: #2980b9; background: #eaf4fb; color: #1a6091; }
+  .toggle-btn:active { opacity: 0.7; }
 
-  .qty-input {
-    width: 72px;
-    flex-shrink: 0;
-    text-align: center;
+  /* Deal section */
+  .deal-section {
+    display: none; background: #fff8f2; border: 1.5px solid var(--accent);
+    border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px;
   }
-  .qty-input input {
-    width: 100%;
-    padding: 11px 8px;
-    text-align: center;
-    font-size: 18px;
-  }
+  .deal-section.visible { display: block; }
+  .deal-title { font-size: 12px; font-weight: 600; color: var(--accent-dark); margin-bottom: 10px; }
+  .deal-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .deal-row span { font-size: 14px; color: var(--text-muted); white-space: nowrap; }
+  .deal-row input { width: 70px; padding: 8px; font-size: 15px; }
 
-  /* Weight toggle */
-  .weight-toggle-btn {
-    background: none;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 8px 12px;
-    font-size: 13px;
-    cursor: pointer;
-    color: var(--text-muted);
-    transition: all 0.2s;
-    display: none;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 8px;
-    width: 100%;
-    justify-content: center;
-  }
-  .weight-toggle-btn.visible { display: flex; }
-  .weight-toggle-btn.active { border-color: #2980b9; background: #eaf4fb; color: #1a6091; }
-
-  .weight-section {
-    display: none;
-    background: #eaf4fb;
-    border: 1.5px solid #2980b9;
-    border-radius: var(--radius-sm);
-    padding: 12px;
-    margin-bottom: 8px;
-    animation: slideDown 0.2s ease;
-  }
+  /* Weight section */
+  .weight-section { display: none; background: #eaf4fb; border: 1.5px solid #2980b9; border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; }
   .weight-section.visible { display: block; }
   .weight-title { font-size: 12px; font-weight: 600; color: #1a6091; margin-bottom: 10px; }
   .weight-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .weight-row span { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
   .weight-row input { width: 90px; }
   .weight-scan-btn {
-    padding: 6px 12px;
-    background: #2980b9;
-    color: #fff;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-    cursor: pointer;
-    font-family: inherit;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap;
-  }
-
-  /* Deal toggle */
-  .deal-toggle-btn {
-    background: none;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 8px 12px;
-    font-size: 13px;
-    cursor: pointer;
-    color: var(--text-muted);
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 8px;
-    width: 100%;
-    justify-content: center;
-  }
-  .deal-toggle-btn:hover { border-color: var(--accent); color: var(--accent-dark); }
-  .deal-toggle-btn.active { border-color: var(--accent); background: #fff8f2; color: var(--accent-dark); }
-
-  /* Deal section */
-  .deal-section {
-    display: none;
-    background: #fff8f2;
-    border: 1.5px solid var(--accent);
-    border-radius: var(--radius-sm);
-    padding: 12px;
-    margin-bottom: 8px;
-    animation: slideDown 0.2s ease;
-  }
-  .deal-section.visible { display: block; }
-
-  @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .deal-title { font-size: 12px; font-weight: 600; color: var(--accent-dark); margin-bottom: 10px; }
-
-  .deal-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .deal-row span { font-size: 14px; color: var(--text-muted); white-space: nowrap; }
-  .deal-row input {
-    width: 70px;
-    padding: 8px;
-    font-size: 15px;
-  }
-
-  /* Name input */
-  .name-input-wrap {
-    margin-bottom: 8px;
-  }
-  .name-input-wrap input {
-    font-size: 14px;
-    padding: 8px 12px;
-    direction: rtl;
+    padding: 7px 12px; background: #2980b9; color: #fff; border: none; border-radius: var(--radius-sm);
+    font-size: 12px; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 4px; white-space: nowrap;
   }
 
   /* Add button */
   .add-btn {
-    width: 100%;
-    padding: 13px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-    letter-spacing: 0.3px;
+    width: 100%; padding: 15px; background: var(--accent); color: #fff; border: none;
+    border-radius: var(--radius-sm); font-size: 17px; font-weight: 700; cursor: pointer;
+    transition: background 0.2s; margin-top: 4px; font-family: inherit; letter-spacing: 0.3px;
   }
-  .add-btn:hover { background: var(--accent-dark); }
-  .add-btn:active { transform: scale(0.98); }
+  .add-btn:active { background: var(--accent-dark); transform: scale(0.99); }
 
-  /* BUDGET PANEL */
-  .budget-panel {
-    background: var(--bg-card);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    border: 1px solid var(--border);
-    margin-bottom: 14px;
+  /* ═══ MODALS ═══ */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 200; align-items: center; justify-content: center;
   }
-  .budget-mode-tabs {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 10px;
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--bg-card); border-radius: var(--radius); padding: 24px 20px;
+    max-width: 300px; width: 88%; margin: 0 auto;
   }
-  .budget-tab {
-    flex: 1;
-    padding: 7px 8px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: none;
-    font-size: 13px;
-    font-family: inherit;
-    cursor: pointer;
-    color: var(--text-muted);
-    transition: all 0.2s;
-    text-align: center;
-  }
-  .budget-tab.active-limit { border-color: var(--red); background: #fff0ef; color: var(--red); font-weight: 600; }
-  .budget-tab.active-goal  { border-color: var(--green-light); background: var(--green-pale); color: var(--green); font-weight: 600; }
-  .budget-input-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .budget-label-text { font-size: 14px; color: var(--text-muted); flex-shrink: 0; }
-  .budget-panel input {
-    width: 120px;
-    flex: none;
-    padding: 8px 28px 8px 10px;
-    font-size: 15px;
-  }
-  .budget-clear {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    font-size: 18px;
-    line-height: 1;
-    padding: 4px;
-    flex-shrink: 0;
-  }
-
-  /* FAVORITES */
-  .fav-panel {
-    background: var(--bg-card);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    border: 1px solid var(--border);
-    margin-bottom: 14px;
-  }
-  .fav-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 10px;
-  }
-  .fav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .fav-item:hover { border-color: var(--accent); background: #fff8f2; }
-  .fav-item-info { flex: 1; min-width: 0; }
-  .fav-item-name { font-size: 14px; font-weight: 600; }
-  .fav-item-price { font-size: 12px; color: var(--text-muted); }
-  .fav-item-del {
-    background: none; border: none; color: var(--text-muted);
-    cursor: pointer; font-size: 16px; padding: 2px 4px;
-    line-height: 1; flex-shrink: 0;
-  }
-  .fav-item-del:hover { color: var(--red); }
-  .fav-star-btn {
-    background: none; border: none; font-size: 16px;
-    cursor: pointer; padding: 2px; line-height: 1;
-    flex-shrink: 0; opacity: 0.4; transition: opacity 0.2s;
-  }
-  .fav-star-btn.saved { opacity: 1; }
-  .price-updated-badge {
-    display: inline-block; background: #fff3e8; color: var(--accent-dark);
-    border: 0.5px solid var(--accent); border-radius: 4px;
-    padding: 1px 5px; font-size: 10px; font-weight: 600; margin-right: 4px;
-  }
-
-  /* SAVED LISTS */
-  .saved-lists-panel {
-    background: var(--bg-card);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    border: 1px solid var(--border);
-    margin-bottom: 14px;
-  }
-  .saved-list-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .saved-list-item:last-child { border-bottom: none; }
-  .saved-list-name { flex: 1; font-size: 14px; font-weight: 600; }
-  .saved-list-meta { font-size: 12px; color: var(--text-muted); }
-  .saved-list-actions { display: flex; gap: 6px; }
-  .slist-btn {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 5px 10px;
-    font-size: 12px;
-    cursor: pointer;
-    font-family: inherit;
-    color: var(--text-muted);
-    transition: all 0.15s;
-  }
-  .slist-btn.load { border-color: var(--green-light); color: var(--green); }
-  .slist-btn.del:hover { border-color: var(--red); color: var(--red); }
-  .save-cart-btn {
-    width: 100%;
-    padding: 10px;
-    background: none;
-    border: 1.5px dashed var(--green-light);
-    border-radius: var(--radius-sm);
-    color: var(--green-mid);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.2s;
-    margin-top: 10px;
-  }
-  .save-cart-btn:hover { background: var(--green-pale); }
-
-  /* ITEMS LIST */
-  .items-section { margin-bottom: 14px; }
-  .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  .section-title { font-size: 14px; font-weight: 700; color: var(--text); }
-  .reset-btn {
-    background: none;
-    border: 1.5px solid var(--border);
-    color: var(--text-muted);
-    border-radius: var(--radius-sm);
-    padding: 5px 12px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .reset-btn:hover { border-color: var(--red); color: var(--red); }
-
-  .items-list { display: flex; flex-direction: column; gap: 8px; }
-
-  .item-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    animation: fadeIn 0.25s ease;
-    transition: box-shadow 0.2s;
-  }
-  .item-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
-  .item-card.editing { border-color: var(--green-light); box-shadow: 0 0 0 2px rgba(82,183,136,0.2); }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-6px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .item-num {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: var(--green-pale);
-    color: var(--green);
-    font-size: 12px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    margin-top: 1px;
-  }
-
-  .item-body { flex: 1; min-width: 0; }
-
-  .item-name {
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 2px;
-    color: var(--text);
-  }
-
-  .item-detail {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-bottom: 4px;
-  }
-
-  .item-price-row {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-  }
-  .item-total-price {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--green);
-  }
-  .item-unit-price {
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-
-  /* Edit mode inline */
-  .item-edit-area {
-    display: none;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-  }
-  .item-card.editing .item-edit-area { display: block; }
-  .item-card.editing .item-display { opacity: 0.5; }
-
-  .edit-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
-  .edit-row label { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-  .edit-row input { flex: 1; font-size: 14px; padding: 7px 10px; }
-
-  .edit-actions { display: flex; gap: 8px; }
-  .edit-save {
-    flex: 1;
-    padding: 8px;
-    background: var(--green);
-    color: #fff;
-    border: none;
-    border-radius: var(--radius-sm);
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .edit-cancel {
-    padding: 8px 14px;
-    background: none;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 14px;
-    cursor: pointer;
-    color: var(--text-muted);
-  }
-
-  .item-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    flex-shrink: 0;
-  }
-  .action-btn {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 14px;
-    color: var(--text-muted);
-    transition: all 0.15s;
-  }
-  .action-btn:hover { border-color: var(--green-light); color: var(--green); }
-  .action-btn.delete:hover { border-color: var(--red); color: var(--red); }
-
-  /* Empty state */
-  .empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--text-muted);
-  }
-  .empty-icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-text { font-size: 15px; }
-
-  /* BOTTOM SHEET — Tesseract loading */
-  .loading-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-  }
-  .loading-overlay.visible { display: flex; }
-  .loading-card {
-    background: #fff;
-    border-radius: var(--radius);
-    padding: 24px 28px;
-    text-align: center;
-    max-width: 280px;
-    width: 90%;
-  }
-  .spinner {
-    width: 36px;
-    height: 36px;
-    border: 3px solid var(--green-pale);
-    border-top-color: var(--green);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto 12px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-size: 14px; color: var(--text); }
-  .loading-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .modal-icon { font-size: 36px; text-align: center; margin-bottom: 12px; }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .modal-body { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-btn { flex: 1; padding: 12px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; border: none; }
+  .modal-btn.cancel { background: var(--bg); border: 1.5px solid var(--border); color: var(--text-muted); }
+  .modal-btn.danger { background: var(--red); color: #fff; }
+  .modal-btn.primary { background: var(--green); color: #fff; }
+  .modal-input { width: 100%; margin-bottom: 14px; font-size: 14px; direction: rtl; text-align: right; }
 
   /* Toast */
   .toast {
-    position: fixed;
-    bottom: 110px;
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: var(--green);
-    color: #fff;
-    padding: 10px 20px;
-    border-radius: 24px;
-    font-size: 14px;
-    font-weight: 600;
-    opacity: 0;
-    transition: all 0.3s;
-    z-index: 300;
-    white-space: nowrap;
+    position: fixed; bottom: calc(var(--tab-h) + var(--safe-bottom) + 12px);
+    left: 50%; transform: translateX(-50%) translateY(16px);
+    background: var(--green); color: #fff; padding: 10px 20px; border-radius: 24px;
+    font-size: 14px; font-weight: 600; opacity: 0; transition: all 0.28s;
+    z-index: 300; white-space: nowrap; pointer-events: none;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .toast.warn { background: var(--accent-dark); }
 
-  /* Deal badge */
-  .deal-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    background: #fff3e8;
-    color: var(--accent-dark);
-    border: 1px solid var(--accent);
-    border-radius: 4px;
-    padding: 1px 6px;
-    font-size: 11px;
-    font-weight: 600;
-    margin-right: 4px;
+  /* Loading overlay */
+  .loading-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 500; align-items: center; justify-content: center;
   }
+  .loading-overlay.visible { display: flex; }
+  .loading-card {
+    background: var(--bg-card); border-radius: var(--radius); padding: 28px 32px;
+    text-align: center; min-width: 180px;
+  }
+  .spinner {
+    width: 36px; height: 36px; border: 3px solid var(--green-pale);
+    border-top-color: var(--green); border-radius: 50%;
+    animation: spin 0.75s linear infinite; margin: 0 auto 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 15px; font-weight: 600; color: var(--text); }
+  .loading-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .item-card { animation: slideUp 0.2s ease; }
+
+  /* Divider title for screens */
+  .screen-empty {
+    text-align: center; padding: 40px 20px;
+    font-size: 14px; color: var(--text-muted);
+  }
+  .screen-empty-icon { font-size: 44px; margin-bottom: 10px; }
 </style>
 </head>
 <body>
 
-<!-- Loading overlay -->
+<!-- Loading -->
 <div class="loading-overlay" id="loadingOverlay">
   <div class="loading-card">
     <div class="spinner"></div>
@@ -737,99 +552,170 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Save cart modal -->
-<div id="saveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400;align-items:center;justify-content:center">
-  <div style="background:var(--bg-card);border-radius:var(--radius);padding:24px 20px;max-width:300px;width:90%;margin:0 auto">
-    <div style="font-size:16px;font-weight:700;margin-bottom:14px" id="saveModalTitle">💾 שמור רשימה</div>
-    <input type="text" id="saveNameInput" placeholder="שם הרשימה (למשל: שישי 14/3)" dir="rtl" style="width:100%;margin-bottom:14px;font-size:14px"/>
-    <div style="display:flex;gap:10px">
-      <button onclick="closeSaveModal()" style="flex:1;padding:11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:none;font-size:14px;cursor:pointer;font-family:inherit;color:var(--text-muted)" id="saveCancelBtn">ביטול</button>
-      <button onclick="confirmSaveCart()" style="flex:1;padding:11px;border:none;border-radius:var(--radius-sm);background:var(--green);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit" id="saveConfirmBtn">שמור</button>
+<!-- Reset Modal -->
+<div class="modal-overlay" id="resetModal">
+  <div class="modal-box">
+    <div class="modal-icon">🗑️</div>
+    <div class="modal-title" id="modalTitle">איפוס עגלה</div>
+    <div class="modal-body" id="modalBody">כל הפריטים יימחקו. האם להמשיך?</div>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeResetModal()" id="modalCancel">ביטול</button>
+      <button class="modal-btn danger" onclick="doReset()" id="modalConfirm">אפס</button>
     </div>
   </div>
 </div>
 
-<!-- Reset confirm modal -->
-<div id="resetModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400;align-items:center;justify-content:center">
-  <div style="background:var(--bg-card);border-radius:var(--radius);padding:24px 20px;max-width:280px;width:88%;margin:0 auto;text-align:center">
-    <div style="font-size:32px;margin-bottom:12px">🗑️</div>
-    <div style="font-size:16px;font-weight:700;margin-bottom:8px" id="modalTitle">איפוס עגלה</div>
-    <div style="font-size:14px;color:var(--text-muted);margin-bottom:20px;line-height:1.5" id="modalBody">כל הפריטים יימחקו. האם להמשיך?</div>
-    <div style="display:flex;gap:10px">
-      <button onclick="closeResetModal()" style="flex:1;padding:11px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:none;font-size:14px;cursor:pointer;font-family:inherit;color:var(--text-muted)" id="modalCancel">ביטול</button>
-      <button onclick="doReset()" style="flex:1;padding:11px;border:none;border-radius:var(--radius-sm);background:var(--red);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit" id="modalConfirm">אפס</button>
+<!-- Save Cart Modal -->
+<div class="modal-overlay" id="saveModal">
+  <div class="modal-box">
+    <div class="modal-title" id="saveModalTitle">💾 שמור רשימה</div>
+    <input type="text" class="modal-input" id="saveNameInput" placeholder="שם הרשימה (למשל: שישי 14/3)" dir="rtl" />
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeSaveModal()" id="saveCancelBtn">ביטול</button>
+      <button class="modal-btn primary" onclick="confirmSaveCart()" id="saveConfirmBtn">שמור</button>
     </div>
   </div>
 </div>
 
-<!-- HEADER -->
-<header>
-  <div class="header-top">
-    <div>
-      <div class="app-title" id="appTitle">כמה עלה עד עכשיו</div>
-    </div>
-    <div style="display:flex;flex-direction:row-reverse;gap:6px;align-items:center">
-      <button class="lang-btn" onclick="toggleSettings()" title="הגדרות">⚙️</button>
-      <button class="lang-btn" id="langBtn" onclick="toggleLang()">EN</button>
-      <button class="lang-btn" id="favHdrBtn" onclick="toggleFavPanel()" title="מועדפים" style="background:rgba(244,162,97,0.35);padding:4px 12px;font-size:13px">⭐</button>
-    </div>
-  </div>
-  <div class="total-display">
-    <span class="currency">₪</span>
-    <span class="total-amount" id="totalDisplay">0.00</span>
-  </div>
-  <div class="item-count" id="itemCount">0 פריטים בעגלה</div>
-  <div class="budget-bar-wrap" id="budgetBarWrap">
-    <div class="budget-track">
-      <div class="budget-fill" id="budgetFill"></div>
-    </div>
-    <div class="budget-label" id="budgetLabel"></div>
-  </div>
-</header>
+<!-- ═══ APP SHELL ═══ -->
+<div class="app-shell">
 
-<div id="favDropdown" style="display:none;background:var(--bg-card);border-bottom:1.5px solid var(--border);padding:14px 16px;max-width:600px;margin:0 auto">
-  <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px" id="favDropTitle">⭐ מועדפים</div>
-  <div id="favDropGrid"></div>
-</div>
-
-<div id="settingsPanel" style="display:none;background:#fff8f2;border:1.5px solid var(--accent);border-radius:var(--radius);padding:16px;margin:12px 14px 0;max-width:600px;margin-left:auto;margin-right:auto">
-  <div style="font-size:13px;font-weight:700;color:var(--accent-dark);margin-bottom:10px">⚙️ הגדרות API</div>
-  <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px;line-height:1.5">כדי לסרוק תגי מחיר, צריך API key מ-<a href="https://console.anthropic.com" target="_blank" style="color:var(--green)">console.anthropic.com</a> ← API Keys ← Create Key</div>
-  <div style="display:flex;gap:8px;align-items:center">
-    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." style="flex:1;font-size:13px;font-family:monospace;direction:ltr" />
-    <button onclick="saveApiKey()" style="padding:8px 14px;background:var(--green);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;white-space:nowrap">שמור</button>
-  </div>
-  <div id="apiKeyStatus" style="font-size:12px;margin-top:6px;color:var(--text-muted)"></div>
-</div>
-
-<main>
-
-  <!-- Budget panel -->
-  <div class="budget-panel">
-    <div class="budget-mode-tabs">
-      <button class="budget-tab" id="tabLimit" onclick="setBudgetMode('limit')">🔴 <span id="tabLimitText">הגבלת תקציב</span></button>
-      <button class="budget-tab" id="tabGoal"  onclick="setBudgetMode('goal')">🟢 <span id="tabGoalText">יעד מינימום</span></button>
-    </div>
-    <div class="budget-input-row">
-      <div class="budget-label-text" id="budgetLabelText">סכום:</div>
-      <div class="price-input-wrap" style="margin-bottom:0">
-        <input type="number" id="budgetInput" placeholder="0" min="0" step="1" oninput="updateBudget()" />
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-row1">
+      <div class="app-name" id="appTitle">כמה עלה עד עכשיו</div>
+      <div class="header-actions">
+        <button class="hdr-btn" id="langBtn" onclick="toggleLang()">EN</button>
       </div>
-      <button class="budget-clear" onclick="clearBudget()" title="נקה">✕</button>
+    </div>
+    <div class="total-row">
+      <span class="currency">₪</span>
+      <span class="total-amount" id="totalDisplay">0.00</span>
+    </div>
+    <div class="item-count" id="itemCount">0 פריטים בעגלה</div>
+    <button class="budget-mode-pill hidden" id="budgetModePill" onclick="switchTab('settings')">
+      <span id="budgetModePillIcon">🔴</span>
+      <span id="budgetModePillText">הגבלת תקציב</span>
+    </button>
+    <div class="budget-bar-wrap" id="budgetBarWrap">
+      <div class="budget-track"><div class="budget-fill" id="budgetFill"></div></div>
+      <div class="budget-label" id="budgetLabel"></div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="app-content">
+    <div class="content-inner">
+
+      <!-- TAB: Cart (items) -->
+      <div class="tab-screen active" id="screen-cart">
+        <div class="section-header">
+          <div class="section-title" id="sectionTitle">פריטים בעגלה</div>
+          <button class="reset-btn" id="resetBtn" onclick="confirmReset()">אפס הכל</button>
+        </div>
+        <div id="itemsList"></div>
+      </div>
+
+      <!-- TAB: Favorites -->
+      <div class="tab-screen" id="screen-favs">
+        <div class="section-header">
+          <div class="section-title" id="favTitle">מועדפים</div>
+        </div>
+        <div id="favsList"></div>
+      </div>
+
+      <!-- TAB: Saved Lists -->
+      <div class="tab-screen" id="screen-lists">
+        <div class="section-header">
+          <div class="section-title" id="savedListsTitle">רשימות שמורות</div>
+        </div>
+        <div id="savedListsContainer"></div>
+        <button class="save-cart-btn" id="saveCartBtn" onclick="saveCurrentCart()">💾 שמור עגלה נוכחית</button>
+      </div>
+
+      <!-- TAB: Settings -->
+      <div class="tab-screen" id="screen-settings">
+        <!-- Budget -->
+        <div class="settings-card">
+          <div class="settings-card-title" id="budgetCardTitle">תקציב</div>
+          <div class="budget-mode-tabs">
+            <button class="budget-tab" id="tabLimit" onclick="setBudgetMode('limit')">🔴 <span id="tabLimitText">הגבלת תקציב</span></button>
+            <button class="budget-tab" id="tabGoal"  onclick="setBudgetMode('goal')">🟢 <span id="tabGoalText">יעד מינימום</span></button>
+          </div>
+          <div class="budget-input-row">
+            <div class="budget-label-text" id="budgetLabelText">סכום:</div>
+            <div class="budget-input-wrap">
+              <input type="number" id="budgetInput" placeholder="0" min="0" step="1" oninput="updateBudget()" />
+            </div>
+            <button class="budget-clear" onclick="clearBudget()" title="נקה">✕</button>
+          </div>
+        </div>
+
+        <!-- API Key -->
+        <div class="settings-card">
+          <div class="settings-card-title">Anthropic API Key</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">
+            לסריקת תגי מחיר, צריך API key מ-<a href="https://console.anthropic.com" target="_blank" style="color:var(--green)">console.anthropic.com</a>
+          </div>
+          <div class="api-row">
+            <input type="password" id="apiKeyInput" placeholder="sk-ant-..." dir="ltr" style="font-family:monospace;font-size:13px;padding:10px 12px" />
+            <button class="api-save-btn" onclick="saveApiKey()">שמור</button>
+          </div>
+          <div id="apiKeyStatus"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <!-- Add panel -->
-  <div class="add-panel">
-    <div class="panel-title" id="panelTitle">הוסף פריט</div>
+  <!-- TAB BAR -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" id="tab-cart" onclick="switchTab('cart')">
+      <span class="tab-icon">🛒</span>
+      <span class="tab-label" id="tabLabelCart">עגלה</span>
+      <span class="tab-badge" id="cartBadge"></span>
+    </button>
+    <button class="tab-btn" id="tab-favs" onclick="switchTab('favs')">
+      <span class="tab-icon">⭐</span>
+      <span class="tab-label" id="tabLabelFavs">מועדפים</span>
+      <span class="tab-badge" id="favsBadge"></span>
+    </button>
+    <button class="tab-fab" onclick="openSheet()">
+      <div class="fab-circle">＋</div>
+      <span class="fab-label" id="tabLabelAdd">הוסף</span>
+    </button>
+    <button class="tab-btn" id="tab-lists" onclick="switchTab('lists')">
+      <span class="tab-icon">📋</span>
+      <span class="tab-label" id="tabLabelLists">רשימות</span>
+      <span class="tab-badge" id="listsBadge"></span>
+    </button>
+    <button class="tab-btn" id="tab-settings" onclick="switchTab('settings')">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-label" id="tabLabelSettings">הגדרות</span>
+    </button>
+  </nav>
 
-    <!-- Camera button -->
-    <button class="cam-btn" id="camBtn" onclick="document.getElementById('fileInput').click()">
-      <span class="cam-icon">📷</span>
+</div><!-- end app-shell -->
+
+<!-- BOTTOM SHEET (Add Item) -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeSheet()"></div>
+<div class="bottom-sheet" id="bottomSheet">
+  <div class="sheet-handle-area" onclick="closeSheet()">
+    <span class="sheet-handle"></span>
+  </div>
+  <div class="sheet-title-row">
+    <span class="sheet-title" id="panelTitle">הוסף פריט</span>
+    <button class="sheet-close" onclick="closeSheet()">✕</button>
+  </div>
+  <div class="sheet-body">
+    <!-- Camera -->
+    <button class="cam-btn" onclick="document.getElementById('fileInput').click()">
+      <span class="cam-icon-big">📷</span>
       <span id="camBtnText">צלם תג מחיר</span>
     </button>
     <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleImage(event)">
-    <input type="file" id="productFileInput" accept="image/*" capture="environment" onchange="handleProductImage(event)" style="display:none">
+    <input type="file" id="productFileInput" accept="image/*" capture="environment" onchange="handleProductImage(event)">
+    <input type="file" id="weightFileInput" accept="image/*" capture="environment" onchange="handleWeightImage(event)">
 
     <!-- OCR preview -->
     <div class="ocr-preview" id="ocrPreview">
@@ -837,15 +723,15 @@
       <div class="ocr-status" id="ocrStatus"></div>
     </div>
 
-    <!-- Product scan button (shown only when price found but name not) -->
-    <button class="cam-btn" id="productScanBtn" onclick="document.getElementById('productFileInput').click()" style="display:none;background:var(--green-mid);margin-bottom:12px">
-      <span class="cam-icon">📦</span>
+    <!-- Product scan -->
+    <button class="cam-btn secondary" id="productScanBtn" onclick="document.getElementById('productFileInput').click()" style="display:none;margin-bottom:12px">
+      <span>📦</span>
       <span id="productScanTxt">צלם מוצר לזיהוי שם</span>
     </button>
 
     <!-- Name -->
-    <div class="name-input-wrap">
-      <input type="text" id="nameInput" placeholder="שם מוצר (אופציונלי)" dir="rtl" style="text-align:right"/>
+    <div class="name-wrap">
+      <input type="text" id="nameInput" placeholder="שם מוצר (אופציונלי)" dir="rtl" style="text-align:right;direction:rtl"/>
     </div>
 
     <!-- Price + Qty -->
@@ -853,18 +739,16 @@
       <div class="price-input-wrap">
         <input type="number" id="priceInput" placeholder="0.00" min="0" step="0.01" />
       </div>
-      <div class="qty-input">
+      <div class="qty-wrap">
         <input type="number" id="qtyInput" value="1" min="1" step="1" />
       </div>
     </div>
 
     <!-- Deal toggle -->
-    <button class="deal-toggle-btn" id="dealToggleBtn" onclick="toggleDeal()">
+    <button class="toggle-btn" id="dealToggleBtn" onclick="toggleDeal()">
       <span>🏷️</span>
       <span id="dealToggleText">יש מבצע?</span>
     </button>
-
-    <!-- Deal section -->
     <div class="deal-section" id="dealSection">
       <div class="deal-title" id="dealSectionTitle">⚡ הגדר מבצע</div>
       <div class="deal-row">
@@ -875,9 +759,8 @@
       </div>
     </div>
 
-    <!-- Weight toggle (shown after price tag scan with price/kg) -->
-    <input type="file" id="weightFileInput" accept="image/*" capture="environment" style="display:none" onchange="handleWeightImage(event)" />
-    <button class="weight-toggle-btn" id="weightToggleBtn" onclick="toggleWeight()">
+    <!-- Weight toggle -->
+    <button class="toggle-btn" id="weightToggleBtn" style="display:none" onclick="toggleWeight()">
       <span>⚖️</span>
       <span id="weightToggleText">פריט במשקל?</span>
     </button>
@@ -885,51 +768,34 @@
       <div class="weight-title" id="weightTitle">⚖️ מחיר לק"ג — הערכת משקל</div>
       <div class="weight-row">
         <span id="weightLabel1">משקל משוער:</span>
-        <input type="number" id="weightInput" placeholder="0.000" min="0" step="0.001" oninput="updateWeightTotal()" />
+        <input type="number" id="weightInput" placeholder="0.000" min="0" step="0.001" oninput="updateWeightTotal()" style="width:90px"/>
         <span id="weightLabel2">ק"ג</span>
         <button class="weight-scan-btn" onclick="document.getElementById('weightFileInput').click()">
-          <span>📷</span>
-          <span id="weightScanText">צלם מוצר</span>
+          <span>📷</span><span id="weightScanText">צלם</span>
         </button>
       </div>
       <div id="weightEstimateNote" style="font-size:12px;color:#1a6091;margin-top:8px;display:none"></div>
       <div style="font-size:13px;font-weight:600;color:var(--green);margin-top:8px" id="weightTotalPreview"></div>
     </div>
 
-    <!-- Add -->
-    <button class="add-btn" id="addBtn" onclick="addItem()">
+    <!-- Add button -->
+    <button class="add-btn" onclick="addItem()">
       <span id="addBtnText">הוסף לעגלה +</span>
     </button>
   </div>
-
-  <!-- Saved lists -->
-  <div class="saved-lists-panel" id="savedListsPanel">
-    <div class="section-header">
-      <div class="section-title" id="savedListsTitle">רשימות שמורות</div>
-    </div>
-    <div id="savedListsContainer"></div>
-    <button class="save-cart-btn" id="saveCartBtn" onclick="saveCurrentCart()">💾 שמור עגלה נוכחית</button>
-  </div>
-
-  <!-- Items list -->
-  <div class="items-section">
-    <div class="section-header">
-      <div class="section-title" id="sectionTitle">פריטים בעגלה</div>
-      <button class="reset-btn" id="resetBtn" onclick="confirmReset()">אפס הכל</button>
-    </div>
-    <div class="items-list" id="itemsList"></div>
-  </div>
-
-</main>
-
+</div>
 
 <script>
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let items = JSON.parse(localStorage.getItem('cartItems') || '[]');
 let budget = parseFloat(localStorage.getItem('cartBudget') || '0');
+let budgetMode = localStorage.getItem('cartBudgetMode') || 'limit';
 let lang = localStorage.getItem('cartLang') || 'he';
 let dealMode = false;
+let weightMode = false;
 let editingId = null;
+let currentTab = 'cart';
+let lastBudgetState = null;
 
 // ─── TRANSLATIONS ─────────────────────────────────────────────────────────────
 const T = {
@@ -940,21 +806,17 @@ const T = {
     namePlaceholder: 'שם מוצר (אופציונלי)',
     dealToggle: 'יש מבצע?',
     dealTitle: '⚡ הגדר מבצע',
-    dealLabel1: 'קנה',
-    dealLabel2: 'ב-₪',
+    dealLabel1: 'קנה', dealLabel2: 'ב-₪',
     addBtn: 'הוסף לעגלה +',
     sectionTitle: 'פריטים בעגלה',
     resetBtn: 'אפס הכל',
-    budgetLabel: 'תקציב:',
+    budgetLabel: 'סכום:',
     itemsWord: (n) => n === 1 ? 'פריט בעגלה' : 'פריטים בעגלה',
-    scanning: 'סורק מחיר...',
-    scanDone: (p) => `זיהוי: ₪${p}`,
+    scanning: 'סורק מחיר...', scanDone: (p) => `זיהוי: ₪${p}`,
     scanFail: 'לא זוהה מחיר — הכנס ידנית',
     weightToggle: 'פריט במשקל?',
     weightTitle: '⚖️ מחיר לק"ג — הערכת משקל',
-    weightLabel1: 'משקל משוער:',
-    weightLabel2: 'ק"ג',
-    weightScan: 'צלם מוצר',
+    weightLabel1: 'משקל משוער:', weightLabel2: 'ק"ג', weightScan: 'צלם',
     weightEstimate: (w) => `הערכת Claude: ~${w} ק"ג`,
     weightScanFail: 'לא הוערך — הכנס ידנית',
     weightTotal: (t) => `סה"כ משוער: ₪${t}`,
@@ -962,43 +824,28 @@ const T = {
     saveCartBtn: '💾 שמור עגלה נוכחית',
     saveModalTitle: '💾 שמור רשימה',
     savePlaceholder: 'שם הרשימה (למשל: שישי 14/3)',
-    loadList: 'טען',
-    deleteList: 'מחק',
-    listSaved: 'הרשימה נשמרה ✓',
-    listLoaded: 'הרשימה נטענה ✓',
-    listDeleted: 'הרשימה נמחקה',
+    loadList: 'טען', deleteList: 'מחק',
+    listSaved: 'הרשימה נשמרה ✓', listLoaded: 'הרשימה נטענה ✓', listDeleted: 'הרשימה נמחקה',
     emptyCartSave: 'העגלה ריקה — אין מה לשמור',
     perKg: 'לק"ג',
-    favTitle: '⭐ מועדפים',
-    favEmpty: 'אין מועדפים עדיין — לחץ ⭐ על פריט',
-    favAdded: 'נשמר למועדפים ⭐',
-    favRemoved: 'הוסר מהמועדפים',
-    favLoaded: 'נוסף לעגלה ✓',
-    priceUpdated: (old, n) => `מחיר עודכן: ₪${old} ← ₪${n}`,
-    scanDoneWithName: (p, n) => `זוהה: ₪${p} · ${n}`,
-    scanningProduct: 'מזהה מוצר...',
-    productDetected: (n) => `זוהה מוצר: ${n}`,
+    favTitle: 'מועדפים', favEmpty: 'אין מועדפים עדיין — לחץ ⭐ על פריט',
+    favAdded: 'נשמר למועדפים ⭐', favRemoved: 'הוסר מהמועדפים', favLoaded: 'נוסף לעגלה ✓',
+    priceUpdated: (o,n) => `מחיר עודכן: ₪${o} ← ₪${n}`,
+    scanDoneWithName: (p,n) => `זוהה: ₪${p} · ${n}`,
+    scanningProduct: 'מזהה מוצר...', productDetected: (n) => `זוהה מוצר: ${n}`,
     productScanFail: 'לא זוהה מוצר — הכנס ידנית',
-    scanSub: 'אנא המתן',
-    scanning2: 'מזהה...',
-    added: 'נוסף לעגלה ✓',
-    deleted: 'פריט הוסר',
-    saved: 'נשמר ✓',
-    resetConfirm: 'לאפס את כל העגלה?',
-    resetDone: 'העגלה אופסה',
-    missingPrice: 'נא להכניס מחיר',
-    budgetInfo: (used, total) => `₪${used.toFixed(2)} מתוך ₪${total.toFixed(2)}`,
-    budgetOver: (over) => `חרגת ב-₪${over.toFixed(2)}`,
-    unitPrice: (p) => `₪${p} ליחידה`,
-    qtyLabel: (q) => `× ${q}`,
-    dealInfo: (q, p) => `מבצע: ${q} ב-₪${p}`,
-    editSave: 'שמור',
-    editCancel: 'בטל',
-    editPrice: 'מחיר:',
-    editQty: 'כמות:',
-    editName: 'שם:',
+    scanSub: 'אנא המתן', scanning2: 'מזהה...',
+    added: 'נוסף לעגלה ✓', deleted: 'פריט הוסר', saved: 'נשמר ✓',
+    resetDone: 'העגלה אופסה', missingPrice: 'נא להכניס מחיר',
+    budgetInfo: (u,t) => `₪${u} מתוך ₪${t}`,
+    unitPrice: (p) => `₪${p} ליחידה`, qtyLabel: (q) => `× ${q}`,
+    dealInfo: (q,p) => `מבצע: ${q} ב-₪${p}`,
+    editSave: 'שמור', editCancel: 'בטל',
+    editPrice: 'מחיר:', editQty: 'כמות:', editName: 'שם:',
     item: 'מוצר',
-
+    tabCart: 'עגלה', tabFavs: 'מועדפים', tabAdd: 'הוסף', tabLists: 'רשימות', tabSettings: 'הגדרות',
+    budgetCardTitle: 'תקציב',
+    tabLimitText: 'הגבלת תקציב', tabGoalText: 'יעד מינימום',
   },
   en: {
     appTitle: 'Cart Total',
@@ -1007,21 +854,17 @@ const T = {
     namePlaceholder: 'Item name (optional)',
     dealToggle: 'Deal / Bundle?',
     dealTitle: '⚡ Set Deal',
-    dealLabel1: 'Buy',
-    dealLabel2: 'for ₪',
+    dealLabel1: 'Buy', dealLabel2: 'for ₪',
     addBtn: 'Add to Cart +',
     sectionTitle: 'Items in Cart',
     resetBtn: 'Reset All',
-    budgetLabel: 'Budget:',
+    budgetLabel: 'Amount:',
     itemsWord: (n) => n === 1 ? 'item in cart' : 'items in cart',
-    scanning: 'Scanning price...',
-    scanDone: (p) => `Detected: ₪${p}`,
+    scanning: 'Scanning price...', scanDone: (p) => `Detected: ₪${p}`,
     scanFail: 'No price found — enter manually',
     weightToggle: 'Sold by weight?',
     weightTitle: '⚖️ Price per kg — weight estimate',
-    weightLabel1: 'Estimated weight:',
-    weightLabel2: 'kg',
-    weightScan: 'Scan product',
+    weightLabel1: 'Est. weight:', weightLabel2: 'kg', weightScan: 'Scan',
     weightEstimate: (w) => `Claude estimate: ~${w} kg`,
     weightScanFail: 'Could not estimate — enter manually',
     weightTotal: (t) => `Estimated total: ₪${t}`,
@@ -1029,65 +872,71 @@ const T = {
     saveCartBtn: '💾 Save current cart',
     saveModalTitle: '💾 Save list',
     savePlaceholder: 'List name (e.g. Friday 14/3)',
-    loadList: 'Load',
-    deleteList: 'Delete',
-    listSaved: 'List saved ✓',
-    listLoaded: 'List loaded ✓',
-    listDeleted: 'List deleted',
+    loadList: 'Load', deleteList: 'Delete',
+    listSaved: 'List saved ✓', listLoaded: 'List loaded ✓', listDeleted: 'List deleted',
     emptyCartSave: 'Cart is empty — nothing to save',
     perKg: '/kg',
-    favTitle: '⭐ Favorites',
-    favEmpty: 'No favorites yet — tap ⭐ on an item',
-    favLoaded: 'Added to cart ✓',
-    favAdded: 'Saved to favorites ⭐',
-    favRemoved: 'Removed from favorites',
-    priceUpdated: (old, n) => `Price updated: ₪${old} → ₪${n}`,
-    scanDoneWithName: (p, n) => `Detected: ₪${p} · ${n}`,
-    scanningProduct: 'Identifying product...',
-    productDetected: (n) => `Product: ${n}`,
+    favTitle: 'Favorites', favEmpty: 'No favorites yet — tap ⭐ on an item',
+    favAdded: 'Saved to favorites ⭐', favRemoved: 'Removed from favorites', favLoaded: 'Added to cart ✓',
+    priceUpdated: (o,n) => `Price updated: ₪${o} → ₪${n}`,
+    scanDoneWithName: (p,n) => `Detected: ₪${p} · ${n}`,
+    scanningProduct: 'Identifying product...', productDetected: (n) => `Product: ${n}`,
     productScanFail: 'Could not identify — enter manually',
-    scanSub: 'Please wait',
-    scanning2: 'Scanning...',
-    added: 'Added ✓',
-    deleted: 'Item removed',
-    saved: 'Saved ✓',
-    resetConfirm: 'Reset entire cart?',
-    resetDone: 'Cart reset',
-    missingPrice: 'Please enter a price',
-    budgetInfo: (used, total) => `₪${used.toFixed(2)} of ₪${total.toFixed(2)}`,
-    budgetOver: (over) => `Over budget by ₪${over.toFixed(2)}`,
-    unitPrice: (p) => `₪${p} each`,
-    qtyLabel: (q) => `× ${q}`,
-    dealInfo: (q, p) => `Deal: ${q} for ₪${p}`,
-    editSave: 'Save',
-    editCancel: 'Cancel',
-    editPrice: 'Price:',
-    editQty: 'Qty:',
-    editName: 'Name:',
+    scanSub: 'Please wait', scanning2: 'Scanning...',
+    added: 'Added ✓', deleted: 'Item removed', saved: 'Saved ✓',
+    resetDone: 'Cart reset', missingPrice: 'Please enter a price',
+    budgetInfo: (u,t) => `₪${u} of ₪${t}`,
+    unitPrice: (p) => `₪${p} each`, qtyLabel: (q) => `× ${q}`,
+    dealInfo: (q,p) => `Deal: ${q} for ₪${p}`,
+    editSave: 'Save', editCancel: 'Cancel',
+    editPrice: 'Price:', editQty: 'Qty:', editName: 'Name:',
     item: 'Item',
-
+    tabCart: 'Cart', tabFavs: 'Favorites', tabAdd: 'Add', tabLists: 'Lists', tabSettings: 'Settings',
+    budgetCardTitle: 'Budget',
+    tabLimitText: 'Spending limit', tabGoalText: 'Minimum goal',
   }
 };
-
 function t(key, ...args) {
   const v = T[lang][key];
-  return typeof v === 'function' ? v(...args) : v;
+  return typeof v === 'function' ? v(...args) : (v || key);
 }
 
-// ─── LANG ─────────────────────────────────────────────────────────────────────
-function toggleLang() {
-  lang = lang === 'he' ? 'en' : 'he';
+// ─── TAB NAVIGATION ───────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + tab).classList.add('active');
+  const btn = document.getElementById('tab-' + tab);
+  if (btn) btn.classList.add('active');
+  // Scroll to top on tab switch
+  document.querySelector('.app-content').scrollTop = 0;
+}
+
+// ─── BOTTOM SHEET ─────────────────────────────────────────────────────────────
+function openSheet() {
+  document.getElementById('sheetOverlay').classList.add('open');
+  document.getElementById('bottomSheet').classList.add('open');
+  setTimeout(() => document.getElementById('priceInput').focus(), 400);
+}
+
+function closeSheet() {
+  document.getElementById('sheetOverlay').classList.remove('open');
+  document.getElementById('bottomSheet').classList.remove('open');
+}
+
+// ─── LANG ────────────────────────────────────────────────────────────────────
+function setLang(l) {
+  lang = l;
   localStorage.setItem('cartLang', lang);
   document.documentElement.lang = lang;
   document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
   document.getElementById('langBtn').textContent = lang === 'he' ? 'EN' : 'עב';
   applyLang();
-  renderItems();
-  renderFavs();
-  renderFavs();
-  renderSavedLists();
-  updateTotal();
+  renderItems(); renderFavs(); renderSavedLists(); updateTotal();
 }
+
+function toggleLang() { setLang(lang === 'he' ? 'en' : 'he'); }
 
 function applyLang() {
   document.getElementById('appTitle').textContent = t('appTitle');
@@ -1095,408 +944,79 @@ function applyLang() {
   document.getElementById('camBtnText').textContent = t('camBtn');
   document.getElementById('nameInput').placeholder = t('namePlaceholder');
   document.getElementById('dealToggleText').textContent = t('dealToggle');
+  document.getElementById('dealSectionTitle').textContent = t('dealTitle');
+  document.getElementById('dealLabel1').textContent = t('dealLabel1');
+  document.getElementById('dealLabel2').textContent = t('dealLabel2');
   document.getElementById('productScanTxt').textContent = lang === 'he' ? 'צלם מוצר לזיהוי שם' : 'Scan product for name';
   document.getElementById('weightToggleText').textContent = t('weightToggle');
   document.getElementById('weightTitle').textContent = t('weightTitle');
   document.getElementById('weightLabel1').textContent = t('weightLabel1');
   document.getElementById('weightLabel2').textContent = t('weightLabel2');
   document.getElementById('weightScanText').textContent = t('weightScan');
-  renderFavs();
-  renderSavedLists();
-  document.getElementById('dealSectionTitle').textContent = t('dealTitle');
-  document.getElementById('dealLabel1').textContent = t('dealLabel1');
-  document.getElementById('dealLabel2').textContent = t('dealLabel2');
   document.getElementById('addBtnText').textContent = t('addBtn');
   document.getElementById('sectionTitle').textContent = t('sectionTitle');
   document.getElementById('resetBtn').textContent = t('resetBtn');
   document.getElementById('budgetLabelText').textContent = t('budgetLabel');
-}
-
-// ─── OCR (Claude Vision) ─────────────────────────────────────────────────────
-async function handleImage(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  event.target.value = '';
-
-  const url = URL.createObjectURL(file);
-  document.getElementById('ocrImg').src = url;
-  document.getElementById('ocrPreview').classList.add('visible');
-
-  const statusEl = document.getElementById('ocrStatus');
-  statusEl.className = 'ocr-status scanning';
-  statusEl.textContent = t('scanning');
-  showLoading(t('scanning2'), t('scanSub'));
-
-  try {
-    const b64 = await toBase64(file);
-    const mediaType = file.type || 'image/jpeg';
-
-    const apiKey = localStorage.getItem('anthropicApiKey');
-    if (!apiKey) {
-      hideLoading();
-      statusEl.className = 'ocr-status error';
-      statusEl.textContent = lang === 'he' ? 'חסר API key — לחץ ⚙️ בפינה' : 'Missing API key — tap ⚙️';
-      document.getElementById('settingsPanel').style.display = 'block';
-      return;
-    }
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 150,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
-            { type: 'text', text: 'This is a supermarket image. Extract the price and product name if visible. Reply ONLY in this exact format:\nPRICE: [number or NONE]\nNAME: [product name in Hebrew if visible, or NONE]' }
-          ]
-        }]
-      })
-    });
-
-    hideLoading();
-    const data = await resp.json();
-    const raw = (data.content?.[0]?.text || '').trim();
-
-    const priceMatch = raw.match(/PRICE:\s*([\d.,]+|NONE)/i);
-    const nameMatch  = raw.match(/NAME:\s*(.+)/i);
-
-    const priceRaw = priceMatch ? priceMatch[1].trim() : 'NONE';
-    const nameRaw  = nameMatch  ? nameMatch[1].trim()  : 'NONE';
-
-    const price = parseFloat(priceRaw.replace(',', '.'));
-    const hasPrice = !isNaN(price) && price > 0 && priceRaw !== 'NONE';
-    const hasName  = nameRaw && nameRaw !== 'NONE';
-
-    if (hasPrice) {
-      document.getElementById('priceInput').value = price.toFixed(2);
-      if (hasName) {
-        document.getElementById('nameInput').value = nameRaw;
-        statusEl.className = 'ocr-status done';
-        statusEl.textContent = t('scanDoneWithName', price.toFixed(2), nameRaw);
-        document.getElementById('productScanBtn').style.display = 'none';
-      } else {
-        statusEl.className = 'ocr-status done';
-        statusEl.textContent = t('scanDone', price.toFixed(2));
-        document.getElementById('productScanBtn').style.display = 'flex';
-      }
-      // Show weight toggle for per-kg items
-      document.getElementById('weightToggleBtn').classList.add('visible');
-      showToast(t('scanDone', price.toFixed(2)));
-    } else {
-      statusEl.className = 'ocr-status error';
-      statusEl.textContent = t('scanFail');
-      document.getElementById('productScanBtn').style.display = 'none';
-    }
-  } catch(e) {
-    hideLoading();
-    statusEl.className = 'ocr-status error';
-    statusEl.textContent = t('scanFail');
-    document.getElementById('productScanBtn').style.display = 'none';
-  }
-}
-
-async function handleProductImage(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  event.target.value = '';
-
-  showLoading(t('scanningProduct'), t('scanSub'));
-
-  try {
-    const b64 = await toBase64(file);
-    const mediaType = file.type || 'image/jpeg';
-
-    const apiKey = localStorage.getItem('anthropicApiKey');
-    if (!apiKey) {
-      hideLoading();
-      showToast(lang === 'he' ? 'חסר API key — לחץ ⚙️' : 'Missing API key — tap ⚙️', true);
-      document.getElementById('settingsPanel').style.display = 'block';
-      return;
-    }
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 80,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
-            { type: 'text', text: 'This is a supermarket product. What is the product name in Hebrew? Reply with ONLY the product name (e.g. גבינה צהובה 28%, שמן זית כתית), nothing else. If you cannot identify it, reply NONE.' }
-          ]
-        }]
-      })
-    });
-
-    hideLoading();
-    const data = await resp.json();
-    const raw = (data.content?.[0]?.text || '').trim();
-
-    if (raw && raw !== 'NONE') {
-      document.getElementById('nameInput').value = raw;
-      document.getElementById('productScanBtn').style.display = 'none';
-      const statusEl = document.getElementById('ocrStatus');
-      statusEl.className = 'ocr-status done';
-      statusEl.textContent = t('productDetected', raw);
-      showToast(t('productDetected', raw));
-    } else {
-      showToast(t('productScanFail'), true);
-    }
-  } catch(e) {
-    hideLoading();
-    showToast(t('productScanFail'), true);
-  }
-}
-
-function toBase64(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result.split(',')[1]);
-    r.onerror = rej;
-    r.readAsDataURL(file);
-  });
-}
-
-// ─── DEAL TOGGLE ─────────────────────────────────────────────────────────────
-function toggleDeal() {
-  const price = parseFloat(document.getElementById('priceInput').value);
-  if (!price || price <= 0) {
-    showToast(t('missingPrice'), true);
-    document.getElementById('priceInput').focus();
-    return;
-  }
-  dealMode = !dealMode;
-  document.getElementById('dealSection').classList.toggle('visible', dealMode);
-  document.getElementById('dealToggleBtn').classList.toggle('active', dealMode);
-}
-
-// ─── ADD ITEM ─────────────────────────────────────────────────────────────────
-function addItem() {
-  const price = parseFloat(document.getElementById('priceInput').value);
-  if (!price || price <= 0) {
-    showToast(t('missingPrice'), true);
-    document.getElementById('priceInput').focus();
-    return;
-  }
-
-  const qty = parseInt(document.getElementById('qtyInput').value) || 1;
-  const name = document.getElementById('nameInput').value.trim() || `${t('item')} ${items.length + 1}`;
-
-  // Weight mode overrides qty
-  if (weightMode) {
-    const kg = parseFloat(document.getElementById('weightInput').value);
-    if (kg > 0) {
-      const total = (price * kg).toFixed(2);
-      const name2 = document.getElementById('nameInput').value.trim() || (lang==='he'?'פריט במשקל':'By weight item')+' '+(items.length+1);
-      items.unshift({
-        id: Date.now(), name: name2,
-        unitPrice: price, qty: 1,
-        totalPrice: parseFloat(total),
-        deal: null,
-        weightKg: kg,
-        perKg: true
-      });
-      saveItems(); renderItems(); updateTotal(); clearForm();
-      showToast(t('added'));
-      return;
-    }
-  }
-
-  let itemPrice = price * qty;
-  let dealInfo = null;
-
-  if (dealMode) {
-    const dealQty = parseInt(document.getElementById('dealQty').value) || 2;
-    const dealPrice = parseFloat(document.getElementById('dealPrice').value);
-    if (dealPrice > 0) {
-      const bundles = Math.floor(qty / dealQty);
-      const remainder = qty % dealQty;
-      itemPrice = bundles * dealPrice + remainder * price;
-      dealInfo = { qty: dealQty, price: dealPrice };
-    }
-  }
-
-  const item = {
-    id: Date.now(),
-    name,
-    unitPrice: price,
-    qty,
-    totalPrice: itemPrice,
-    deal: dealInfo,
-  };
-
-  items.unshift(item);
-  saveItems();
-  updateFavPriceIfExists(name, price);
-  renderItems();
-  renderFavs();
-  updateTotal();
-  clearForm();
-  showToast(t('added'));
-}
-
-function clearForm() {
-  document.getElementById('priceInput').value = '';
-  document.getElementById('qtyInput').value = '1';
-  document.getElementById('nameInput').value = '';
-  document.getElementById('ocrPreview').classList.remove('visible');
-  document.getElementById('productScanBtn').style.display = 'none';
-  document.getElementById('weightToggleBtn').classList.remove('visible');
-  document.getElementById('weightEstimateNote').style.display = 'none';
-  document.getElementById('weightTotalPreview').textContent = '';
-  document.getElementById('dealPrice').value = '';
-  document.getElementById('dealQty').value = '2';
-  if (weightMode) toggleWeight();
-  if (dealMode) toggleDeal();
-  dealMode = false;
-  document.getElementById('dealSection').classList.remove('visible');
-  document.getElementById('dealToggleBtn').classList.remove('active');
-}
-
-// ─── EDIT ────────────────────────────────────────────────────────────────────
-function startEdit(id) {
-  // Close any open edit
-  document.querySelectorAll('.item-card.editing').forEach(el => el.classList.remove('editing'));
-  editingId = id;
-  const card = document.getElementById('card-' + id);
-  card.classList.add('editing');
-  const item = items.find(i => i.id === id);
-  document.getElementById('edit-name-' + id).value = item.name;
-  document.getElementById('edit-price-' + id).value = item.unitPrice;
-  document.getElementById('edit-qty-' + id).value = item.qty;
-}
-
-function saveEdit(id) {
-  const item = items.find(i => i.id === id);
-  const newName = document.getElementById('edit-name-' + id).value.trim();
-  const newPrice = parseFloat(document.getElementById('edit-price-' + id).value);
-  const newQty = parseInt(document.getElementById('edit-qty-' + id).value) || 1;
-
-  if (!newPrice || newPrice <= 0) return;
-
-  item.name = newName || item.name;
-  item.unitPrice = newPrice;
-  item.qty = newQty;
-  item.totalPrice = newPrice * newQty;
-  item.deal = null; // reset deal on edit
-
-  saveItems();
-  renderItems();
-  updateTotal();
-  showToast(t('saved'));
-}
-
-function cancelEdit(id) {
-  document.getElementById('card-' + id).classList.remove('editing');
-  editingId = null;
-}
-
-// ─── DELETE ──────────────────────────────────────────────────────────────────
-function deleteItem(id) {
-  items = items.filter(i => i.id !== id);
-  saveItems();
-  renderItems();
-  updateTotal();
-  showToast(t('deleted'));
-}
-
-// ─── RESET ───────────────────────────────────────────────────────────────────
-function confirmReset() {
-  if (items.length === 0) return;
-  const modal = document.getElementById('resetModal');
-  document.getElementById('modalTitle').textContent = lang === 'he' ? 'איפוס עגלה' : 'Reset Cart';
-  document.getElementById('modalBody').textContent = lang === 'he' ? 'כל הפריטים יימחקו. האם להמשיך?' : 'All items will be deleted. Continue?';
-  document.getElementById('modalCancel').textContent = lang === 'he' ? 'ביטול' : 'Cancel';
-  document.getElementById('modalConfirm').textContent = lang === 'he' ? 'אפס' : 'Reset';
-  modal.style.display = 'flex';
-}
-
-function closeResetModal() {
-  document.getElementById('resetModal').style.display = 'none';
-}
-
-function doReset() {
-  closeResetModal();
-  items = [];
-  saveItems();
-  renderItems();
-  updateTotal();
-  showToast(t('resetDone'));
+  document.getElementById('favTitle').textContent = t('favTitle');
+  document.getElementById('savedListsTitle').textContent = t('savedListsTitle');
+  document.getElementById('saveCartBtn').textContent = t('saveCartBtn');
+  document.getElementById('tabLimitText').textContent = t('tabLimitText');
+  document.getElementById('tabGoalText').textContent = t('tabGoalText');
+  document.getElementById('budgetCardTitle').textContent = t('budgetCardTitle');
+  document.getElementById('tabLabelCart').textContent = t('tabCart');
+  document.getElementById('tabLabelFavs').textContent = t('tabFavs');
+  document.getElementById('tabLabelAdd').textContent = t('tabAdd');
+  document.getElementById('tabLabelLists').textContent = t('tabLists');
+  document.getElementById('tabLabelSettings').textContent = t('tabSettings');
 }
 
 // ─── BUDGET ──────────────────────────────────────────────────────────────────
-let budgetMode = localStorage.getItem('cartBudgetMode') || 'limit';
-
 function setBudgetMode(mode) {
   budgetMode = mode;
-  lastBudgetState = null;
   localStorage.setItem('cartBudgetMode', mode);
   updateBudgetTabs();
   updateTotal();
 }
-
 function updateBudgetTabs() {
-  const tl = document.getElementById('tabLimit');
-  const tg = document.getElementById('tabGoal');
-  tl.className = 'budget-tab' + (budgetMode === 'limit' ? ' active-limit' : '');
-  tg.className = 'budget-tab' + (budgetMode === 'goal'  ? ' active-goal'  : '');
+  document.getElementById('tabLimit').className = 'budget-tab' + (budgetMode === 'limit' ? ' active-limit' : '');
+  document.getElementById('tabGoal').className  = 'budget-tab' + (budgetMode === 'goal'  ? ' active-goal'  : '');
 }
-
 function updateBudget() {
   budget = parseFloat(document.getElementById('budgetInput').value) || 0;
   localStorage.setItem('cartBudget', budget);
   updateTotal();
 }
-
 function clearBudget() {
-  budget = 0;
+  budget = 0; localStorage.removeItem('cartBudget');
   document.getElementById('budgetInput').value = '';
-  localStorage.setItem('cartBudget', 0);
   updateTotal();
-}
-
-// ─── SOUNDS ──────────────────────────────────────────────────────────────────
-let lastBudgetState = null;
-
-function playSound(type) {
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  if (type === 'alert') {
-    // שני ביפים יורדים — אזהרה
-    [0, 0.25].forEach((delay, i) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.frequency.value = 520 - i * 80;
-      o.type = 'square';
-      g.gain.setValueAtTime(0.18, ctx.currentTime + delay);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.18);
-      o.start(ctx.currentTime + delay);
-      o.stop(ctx.currentTime + delay + 0.2);
-    });
-  } else if (type === 'success') {
-    // שלושה צלילים עולים — הצלחה
-    [0, 0.15, 0.3].forEach((delay, i) => {
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.frequency.value = 440 + i * 130;
-      o.type = 'sine';
-      g.gain.setValueAtTime(0.15, ctx.currentTime + delay);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.22);
-      o.start(ctx.currentTime + delay);
-      o.stop(ctx.currentTime + delay + 0.25);
-    });
-  }
 }
 
 // ─── TOTAL ───────────────────────────────────────────────────────────────────
 function updateTotal() {
-  const total = items.reduce((s, i) => s + i.totalPrice, 0);
+  const total = items.reduce((s,i) => s + i.totalPrice, 0);
   document.getElementById('totalDisplay').textContent = total.toFixed(2);
   document.getElementById('itemCount').textContent = items.length + ' ' + t('itemsWord', items.length);
+
+  // Cart badge
+  const badge = document.getElementById('cartBadge');
+  if (items.length > 0) { badge.textContent = items.length; badge.classList.add('visible'); }
+  else badge.classList.remove('visible');
+
+  // Budget mode pill
+  const pill = document.getElementById('budgetModePill');
+  if (budget > 0) {
+    pill.classList.remove('hidden');
+    if (budgetMode === 'limit') {
+      document.getElementById('budgetModePillIcon').textContent = '🔴';
+      document.getElementById('budgetModePillText').textContent = lang==='he'?'הגבלת תקציב':'Spending Limit';
+    } else {
+      document.getElementById('budgetModePillIcon').textContent = '🟢';
+      document.getElementById('budgetModePillText').textContent = lang==='he'?'יעד מינימום':'Minimum Goal';
+    }
+  } else {
+    pill.classList.add('hidden');
+  }
 
   const budgetWrap = document.getElementById('budgetBarWrap');
   if (budget > 0) {
@@ -1507,20 +1027,18 @@ function updateTotal() {
     if (budgetMode === 'limit') {
       const isOver = total >= budget;
       fill.className = 'budget-fill' + (pct >= 100 ? ' over' : pct >= 80 ? ' warn' : '');
-      const over = total - budget;
-      const remaining = budget - total;
+      const over = total - budget; const rem = budget - total;
       document.getElementById('budgetLabel').textContent = over > 0
-        ? (lang === 'he' ? `חרגת ב-₪${over.toFixed(2)}` : `Over by ₪${over.toFixed(2)}`)
-        : (lang === 'he' ? `נותר ₪${remaining.toFixed(2)} מתוך ₪${budget.toFixed(2)}` : `₪${remaining.toFixed(2)} left of ₪${budget.toFixed(2)}`);
+        ? (lang==='he' ? `חרגת ב-₪${over.toFixed(2)}` : `Over by ₪${over.toFixed(2)}`)
+        : (lang==='he' ? `נותר ₪${rem.toFixed(2)} מתוך ₪${budget.toFixed(2)}` : `₪${rem.toFixed(2)} left of ₪${budget.toFixed(2)}`);
       if (isOver && lastBudgetState !== 'over') playSound('alert');
       lastBudgetState = isOver ? 'over' : 'ok';
     } else {
-      const isReached = total >= budget;
+      const isReached = total >= budget; const diff = budget - total;
       fill.className = 'budget-fill' + (pct >= 100 ? '' : pct >= 60 ? ' warn' : ' over');
-      const diff = budget - total;
       document.getElementById('budgetLabel').textContent = diff > 0
-        ? (lang === 'he' ? `חסר עוד ₪${diff.toFixed(2)} להגיע ליעד` : `₪${diff.toFixed(2)} more to reach goal`)
-        : (lang === 'he' ? `הגעת ליעד! ₪${total.toFixed(2)} / ₪${budget.toFixed(2)} ✓` : `Goal reached! ₪${total.toFixed(2)} / ₪${budget.toFixed(2)} ✓`);
+        ? (lang==='he' ? `חסר עוד ₪${diff.toFixed(2)} להגיע ליעד` : `₪${diff.toFixed(2)} more to reach goal`)
+        : (lang==='he' ? `הגעת ליעד! ✓` : `Goal reached! ✓`);
       if (isReached && lastBudgetState !== 'reached') playSound('success');
       lastBudgetState = isReached ? 'reached' : 'ok';
     }
@@ -1530,369 +1048,426 @@ function updateTotal() {
   }
 }
 
-// ─── RENDER ───────────────────────────────────────────────────────────────────
-function renderItems() {
-  const list = document.getElementById('itemsList');
-  if (!items.length) {
-    list.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">🛒</div>
-        <div class="empty-text">${lang === 'he' ? 'העגלה ריקה' : 'Cart is empty'}</div>
-      </div>`;
-    return;
+// ─── SOUND ───────────────────────────────────────────────────────────────────
+function playSound(type) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (type === 'alert') {
+      [0,1].forEach(i => {
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = i === 0 ? 440 : 370; o.type = 'sine';
+        const d = i * 0.18;
+        g.gain.setValueAtTime(0.15, ctx.currentTime + d);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + d + 0.22);
+        o.start(ctx.currentTime + d); o.stop(ctx.currentTime + d + 0.25);
+      });
+    } else {
+      [0,1,2].forEach(i => {
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = 440 + i * 130; o.type = 'sine'; const d = i * 0.1;
+        g.gain.setValueAtTime(0.15, ctx.currentTime + d);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + d + 0.22);
+        o.start(ctx.currentTime + d); o.stop(ctx.currentTime + d + 0.25);
+      });
+    }
+  } catch(e) {}
+}
+
+// ─── ADD ITEM ─────────────────────────────────────────────────────────────────
+function addItem() {
+  const price = parseFloat(document.getElementById('priceInput').value);
+  if (!price || price <= 0) { showToast(t('missingPrice'), true); document.getElementById('priceInput').focus(); return; }
+
+  const qty = parseInt(document.getElementById('qtyInput').value) || 1;
+  const name = document.getElementById('nameInput').value.trim() || `${t('item')} ${items.length + 1}`;
+
+  if (weightMode) {
+    const kg = parseFloat(document.getElementById('weightInput').value);
+    if (kg > 0) {
+      const total = (price * kg).toFixed(2);
+      items.unshift({ id: Date.now(), name, unitPrice: price, qty: 1, totalPrice: parseFloat(total), deal: null, weightKg: kg, perKg: true });
+      saveItems(); renderItems(); updateTotal(); clearForm();
+      showToast(t('added')); closeSheet(); switchTab('cart');
+      return;
+    }
   }
 
-  list.innerHTML = items.map((item, idx) => {
-    const dealBadge = item.deal
-      ? `<span class="deal-badge">🏷 ${t('dealInfo', item.deal.qty, item.deal.price)}</span>`
-      : '';
-    const unitNote = item.qty > 1
-      ? `<span class="item-unit-price">${t('unitPrice', item.unitPrice.toFixed(2))} ${t('qtyLabel', item.qty)}</span>`
-      : '';
+  let itemPrice = price * qty; let dealInfo = null;
+  if (dealMode) {
+    const dq = parseInt(document.getElementById('dealQty').value) || 2;
+    const dp = parseFloat(document.getElementById('dealPrice').value);
+    if (dp > 0) {
+      const bundles = Math.floor(qty / dq); const rem = qty % dq;
+      itemPrice = bundles * dp + rem * price;
+      dealInfo = { qty: dq, price: dp };
+    }
+  }
 
-    return `
-      <div class="item-card" id="card-${item.id}">
-        <div class="item-num">${items.length - idx}</div>
-        <div class="item-body">
-          <div class="item-display">
-            <div class="item-name">${escHtml(item.name)}</div>
-            <div class="item-detail">${dealBadge}${item.perKg ? `<span class="deal-badge">⚖️ ${item.weightKg}ק"ג · ₪${item.unitPrice}${t('perKg')}</span>` : ''}</div>
-            <div class="item-price-row">
-              <span class="item-total-price">₪${item.totalPrice.toFixed(2)}</span>
-              ${unitNote}
-            </div>
-          </div>
-          <div class="item-edit-area">
-            <div class="edit-row">
-              <label>${t('editName')}</label>
-              <input type="text" id="edit-name-${item.id}" value="${escHtml(item.name)}" dir="rtl"/>
-            </div>
-            <div class="edit-row">
-              <label>${t('editPrice')}</label>
-              <input type="number" id="edit-price-${item.id}" value="${item.unitPrice}" min="0" step="0.01"/>
-            </div>
-            <div class="edit-row">
-              <label>${t('editQty')}</label>
-              <input type="number" id="edit-qty-${item.id}" value="${item.qty}" min="1" step="1"/>
-            </div>
-            <div class="edit-actions">
-              <button class="edit-save" onclick="saveEdit(${item.id})">${t('editSave')}</button>
-              <button class="edit-cancel" onclick="cancelEdit(${item.id})">${t('editCancel')}</button>
-            </div>
-          </div>
-        </div>
-        <div class="item-actions">
-          <button class="action-btn fav-star-btn ${isFav(item.name) ? 'saved' : ''}" onclick="toggleFav(${item.id})" title="${lang === 'he' ? 'שמור למועדפים' : 'Save to favorites'}" style="font-size:16px">⭐</button>
-          <button class="action-btn" onclick="startEdit(${item.id})" title="${lang === 'he' ? 'ערוך' : 'Edit'}">✏️</button>
-          <button class="action-btn delete" onclick="deleteItem(${item.id})" title="${lang === 'he' ? 'מחק' : 'Delete'}">🗑</button>
-        </div>
-      </div>`;
-  }).join('');
+  items.unshift({ id: Date.now(), name, unitPrice: price, qty, totalPrice: itemPrice, deal: dealInfo });
+  saveItems(); updateFavPriceIfExists(name, price);
+  renderItems(); renderFavs(); updateTotal(); clearForm();
+  showToast(t('added')); closeSheet(); switchTab('cart');
 }
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-function saveItems() {
-  localStorage.setItem('cartItems', JSON.stringify(items));
+function clearForm() {
+  document.getElementById('priceInput').value = '';
+  document.getElementById('qtyInput').value = '1';
+  document.getElementById('nameInput').value = '';
+  document.getElementById('ocrPreview').classList.remove('visible');
+  document.getElementById('productScanBtn').style.display = 'none';
+  document.getElementById('weightToggleBtn').style.display = 'none';
+  document.getElementById('weightEstimateNote').style.display = 'none';
+  document.getElementById('weightTotalPreview').textContent = '';
+  document.getElementById('dealPrice').value = '';
+  document.getElementById('dealQty').value = '2';
+  if (weightMode) toggleWeight();
+  if (dealMode) { dealMode = false; document.getElementById('dealSection').classList.remove('visible'); document.getElementById('dealToggleBtn').classList.remove('active-deal'); }
 }
 
-function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-let toastTimer;
-function showToast(msg, warn = false) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'toast show' + (warn ? ' warn' : '');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.className = 'toast', 2200);
-}
-
-function showLoading(text, sub) {
-  document.getElementById('loadingText').textContent = text;
-  document.getElementById('loadingSubText').textContent = sub;
-  document.getElementById('loadingOverlay').classList.add('visible');
-}
-
-function hideLoading() {
-  document.getElementById('loadingOverlay').classList.remove('visible');
-}
-
-// ─── FAVORITES ───────────────────────────────────────────────────────────────
-function getFavs() {
-  return JSON.parse(localStorage.getItem('cartFavorites') || '[]');
-}
-function saveFavs(favs) {
-  localStorage.setItem('cartFavorites', JSON.stringify(favs));
-}
-function isFav(name) {
-  return getFavs().some(f => f.name === name);
-}
-
-function toggleFav(id) {
+// ─── EDIT ────────────────────────────────────────────────────────────────────
+function startEdit(id) {
+  document.querySelectorAll('.item-card.editing').forEach(el => el.classList.remove('editing'));
+  editingId = id;
+  const card = document.getElementById('card-' + id);
+  card.classList.add('editing');
   const item = items.find(i => i.id === id);
-  if (!item) return;
-  const favs = getFavs();
-  const idx = favs.findIndex(f => f.name === item.name);
-  if (idx >= 0) {
-    favs.splice(idx, 1);
-    saveFavs(favs);
-    showToast(t('favRemoved'));
-  } else {
-    favs.unshift({ name: item.name, unitPrice: item.unitPrice, perKg: item.perKg || false, deal: item.deal || null });
-    saveFavs(favs);
-    showToast(t('favAdded'));
-  }
-  renderItems();
-  renderFavs();
+  document.getElementById('edit-name-' + id).value = item.name;
+  document.getElementById('edit-price-' + id).value = item.unitPrice;
+  document.getElementById('edit-qty-' + id).value = item.qty;
+}
+function saveEdit(id) {
+  const item = items.find(i => i.id === id);
+  const newName = document.getElementById('edit-name-' + id).value.trim();
+  const newPrice = parseFloat(document.getElementById('edit-price-' + id).value);
+  const newQty = parseInt(document.getElementById('edit-qty-' + id).value) || 1;
+  if (!newPrice || newPrice <= 0) return;
+  item.name = newName || item.name; item.unitPrice = newPrice; item.qty = newQty;
+  item.totalPrice = newPrice * newQty; item.deal = null;
+  saveItems(); renderItems(); updateTotal(); showToast(t('saved'));
+}
+function cancelEdit(id) {
+  document.getElementById('card-' + id).classList.remove('editing');
+  editingId = null;
 }
 
-function addFavToCart(name) {
-  const favs = getFavs();
-  const fav = favs.find(f => f.name === name);
-  if (!fav) return;
-  let totalPrice = fav.unitPrice;
-  if (fav.deal) {
-    totalPrice = fav.deal.price; // 1 bundle by default
-  }
-  items.unshift({
-    id: Date.now(), name: fav.name,
-    unitPrice: fav.unitPrice, qty: fav.deal ? fav.deal.qty : 1,
-    totalPrice,
-    deal: fav.deal || null, perKg: fav.perKg || false
-  });
-  saveItems(); renderItems(); updateTotal();
-  showToast(t('favLoaded'));
-  window.scrollTo(0, 0);
+// ─── DELETE / RESET ──────────────────────────────────────────────────────────
+function deleteItem(id) {
+  items = items.filter(i => i.id !== id);
+  saveItems(); renderItems(); updateTotal(); showToast(t('deleted'));
+}
+function confirmReset() {
+  if (!items.length) return;
+  const m = document.getElementById('resetModal');
+  document.getElementById('modalTitle').textContent = lang==='he'?'איפוס עגלה':'Reset Cart';
+  document.getElementById('modalBody').textContent = lang==='he'?'כל הפריטים יימחקו. האם להמשיך?':'All items will be deleted. Continue?';
+  document.getElementById('modalCancel').textContent = lang==='he'?'ביטול':'Cancel';
+  document.getElementById('modalConfirm').textContent = lang==='he'?'אפס':'Reset';
+  m.classList.add('open');
+}
+function closeResetModal() { document.getElementById('resetModal').classList.remove('open'); }
+function doReset() { items = []; saveItems(); renderItems(); updateTotal(); closeResetModal(); showToast(t('resetDone')); }
+
+// ─── DEAL TOGGLE ─────────────────────────────────────────────────────────────
+function toggleDeal() {
+  const price = parseFloat(document.getElementById('priceInput').value);
+  if (!price || price <= 0) { showToast(t('missingPrice'), true); return; }
+  dealMode = !dealMode;
+  document.getElementById('dealSection').classList.toggle('visible', dealMode);
+  document.getElementById('dealToggleBtn').classList.toggle('active-deal', dealMode);
 }
 
-function addFavToCartByIdx(idx) {
-  const favs = getFavs();
-  if (favs[idx]) addFavToCart(favs[idx].name);
-}
-
-function deleteFav(name) {
-  const favs = getFavs().filter(f => f.name !== name);
-  saveFavs(favs);
-  renderFavs();
-  renderItems();
-  showToast(t('favRemoved'));
-}
-
-function deleteFavByIdx(idx) {
-  const favs = getFavs();
-  if (favs[idx]) deleteFav(favs[idx].name);
-}
-
-function updateFavPriceIfExists(name, newPrice) {
-  const favs = getFavs();
-  const fav = favs.find(f => f.name === name);
-  if (fav && fav.unitPrice !== newPrice) {
-    const oldPrice = fav.unitPrice;
-    fav.unitPrice = newPrice;
-    saveFavs(favs);
-    renderFavs();
-    showToast(t('priceUpdated', oldPrice.toFixed(2), newPrice.toFixed(2)));
-  }
-}
-
-function toggleFavPanel() {
-  const panel = document.getElementById('favDropdown');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
-
-function renderFavs() {
-  const favs = getFavs();
-  const grid = document.getElementById('favDropGrid');
-  if (!grid) return;
-  document.getElementById('favDropTitle').textContent = '⭐ ' + t('favTitle').replace('⭐ ', '');
-
-  // Update badge
-  const btn = document.getElementById('favHdrBtn');
-  if (btn) btn.textContent = favs.length ? `⭐ ${favs.length}` : '⭐';
-
-  if (!favs.length) {
-    grid.innerHTML = `<div style="font-size:13px;color:var(--text-muted);padding:4px 0">${t('favEmpty')}</div>`;
-    return;
-  }
-
-  grid.innerHTML = favs.map((fav, i) => {
-    const dealStr = fav.deal ? `<span class="deal-badge">🏷 ${fav.deal.qty}×₪${fav.deal.price}</span>` : '';
-    return `<div class="fav-item" onclick="addFavToCartByIdx(${i});toggleFavPanel()">
-      <div style="font-size:16px;flex-shrink:0">⭐</div>
-      <div class="fav-item-info">
-        <div class="fav-item-name">${escHtml(fav.name)}</div>
-        <div class="fav-item-price">${dealStr} ₪${fav.unitPrice.toFixed(2)}${fav.perKg ? t('perKg') : ''}</div>
-      </div>
-      <button class="fav-item-del" onclick="event.stopPropagation();deleteFavByIdx(${i})" title="${lang==='he'?'הסר':'Remove'}">✕</button>
-    </div>`;
-  }).join('');
-}
-
-// ─── WEIGHT (price per kg) ───────────────────────────────────────────────────
-let weightMode = false;
+// ─── WEIGHT TOGGLE ───────────────────────────────────────────────────────────
 let pricePerKg = 0;
-
 function toggleWeight() {
   weightMode = !weightMode;
   document.getElementById('weightSection').classList.toggle('visible', weightMode);
-  document.getElementById('weightToggleBtn').classList.toggle('active', weightMode);
+  document.getElementById('weightToggleBtn').classList.toggle('active-weight', weightMode);
   if (!weightMode) {
     document.getElementById('weightInput').value = '';
     document.getElementById('weightTotalPreview').textContent = '';
     document.getElementById('weightEstimateNote').style.display = 'none';
   }
 }
-
 function updateWeightTotal() {
   const kg = parseFloat(document.getElementById('weightInput').value) || 0;
   const price = parseFloat(document.getElementById('priceInput').value) || 0;
-  if (kg > 0 && price > 0) {
-    const total = (kg * price).toFixed(2);
-    document.getElementById('weightTotalPreview').textContent = t('weightTotal', total);
-  } else {
-    document.getElementById('weightTotalPreview').textContent = '';
-  }
+  if (kg > 0 && price > 0) document.getElementById('weightTotalPreview').textContent = t('weightTotal', (kg*price).toFixed(2));
+  else document.getElementById('weightTotalPreview').textContent = '';
 }
 
-async function handleWeightImage(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  event.target.value = '';
-
+// ─── OCR ─────────────────────────────────────────────────────────────────────
+async function handleImage(event) {
+  const file = event.target.files[0]; if (!file) return; event.target.value = '';
+  const url = URL.createObjectURL(file);
+  document.getElementById('ocrImg').src = url;
+  document.getElementById('ocrPreview').classList.add('visible');
+  const statusEl = document.getElementById('ocrStatus');
+  statusEl.className = 'ocr-status scanning'; statusEl.textContent = t('scanning');
   showLoading(t('scanning2'), t('scanSub'));
-
   try {
-    const b64 = await toBase64(file);
-    const mediaType = file.type || 'image/jpeg';
+    const b64 = await toBase64(file); const mediaType = file.type || 'image/jpeg';
     const apiKey = localStorage.getItem('anthropicApiKey');
-    if (!apiKey) { hideLoading(); showToast(lang === 'he' ? 'חסר API key' : 'Missing API key', true); return; }
-
-    const priceKg = parseFloat(document.getElementById('priceInput').value) || 0;
-    const prompt = `This is a photo of a supermarket product sold by weight (price per kg: ₪${priceKg}). 
-Estimate the total weight in kg based on what you see (number of items, typical size). 
-Reply ONLY in this format:
-WEIGHT: [number in kg, e.g. 0.650]
-REASON: [one short sentence in Hebrew explaining the estimate]`;
-
+    if (!apiKey) { hideLoading(); statusEl.className = 'ocr-status error'; statusEl.textContent = lang==='he'?'חסר API key — לחץ ⚙️':'Missing API key — tap ⚙️'; switchTab('settings'); return; }
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 100,
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 150,
         messages: [{ role: 'user', content: [
           { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
-          { type: 'text', text: prompt }
-        ]}]
-      })
+          { type: 'text', text: 'This is a supermarket image. Extract the price and product name if visible. Reply ONLY:\nPRICE: [number or NONE]\nNAME: [product name in Hebrew if visible, or NONE]' }
+        ]}]})
     });
-
     hideLoading();
-    const data = await resp.json();
-    const raw = (data.content?.[0]?.text || '').trim();
-    const weightMatch = raw.match(/WEIGHT:\s*([\d.]+)/i);
-    const reasonMatch = raw.match(/REASON:\s*(.+)/i);
+    const data = await resp.json(); const raw = (data.content?.[0]?.text || '').trim();
+    const priceMatch = raw.match(/PRICE:\s*([\d.,]+|NONE)/i);
+    const nameMatch = raw.match(/NAME:\s*(.+)/i);
+    const priceRaw = priceMatch ? priceMatch[1].trim() : 'NONE';
+    const nameRaw = nameMatch ? nameMatch[1].trim() : 'NONE';
+    const price = parseFloat(priceRaw.replace(',','.'));
+    const hasPrice = !isNaN(price) && price > 0 && priceRaw !== 'NONE';
+    const hasName = nameRaw && nameRaw !== 'NONE';
+    if (hasPrice) {
+      document.getElementById('priceInput').value = price.toFixed(2);
+      if (hasName) {
+        document.getElementById('nameInput').value = nameRaw;
+        statusEl.className = 'ocr-status done'; statusEl.textContent = t('scanDoneWithName', price.toFixed(2), nameRaw);
+        document.getElementById('productScanBtn').style.display = 'none';
+      } else {
+        statusEl.className = 'ocr-status done'; statusEl.textContent = t('scanDone', price.toFixed(2));
+        document.getElementById('productScanBtn').style.display = 'flex';
+      }
+      document.getElementById('weightToggleBtn').style.display = 'flex';
+      showToast(t('scanDone', price.toFixed(2)));
+    } else {
+      statusEl.className = 'ocr-status error'; statusEl.textContent = t('scanFail');
+      document.getElementById('productScanBtn').style.display = 'none';
+    }
+  } catch(e) { hideLoading(); document.getElementById('ocrStatus').className = 'ocr-status error'; document.getElementById('ocrStatus').textContent = t('scanFail'); }
+}
 
-    if (weightMatch) {
-      const w = parseFloat(weightMatch[1]);
+async function handleProductImage(event) {
+  const file = event.target.files[0]; if (!file) return; event.target.value = '';
+  showLoading(t('scanningProduct'), t('scanSub'));
+  try {
+    const b64 = await toBase64(file); const mediaType = file.type || 'image/jpeg';
+    const apiKey = localStorage.getItem('anthropicApiKey');
+    if (!apiKey) { hideLoading(); showToast(lang==='he'?'חסר API key':'Missing API key', true); return; }
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 80,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
+          { type: 'text', text: 'This is a supermarket product. What is the product name in Hebrew? Reply with ONLY the product name, nothing else. If unknown, reply NONE.' }
+        ]}]})
+    });
+    hideLoading(); const data = await resp.json(); const raw = (data.content?.[0]?.text || '').trim();
+    if (raw && raw !== 'NONE') {
+      document.getElementById('nameInput').value = raw;
+      document.getElementById('productScanBtn').style.display = 'none';
+      document.getElementById('ocrStatus').className = 'ocr-status done';
+      document.getElementById('ocrStatus').textContent = t('productDetected', raw);
+      showToast(t('productDetected', raw));
+    } else showToast(t('productScanFail'), true);
+  } catch(e) { hideLoading(); showToast(t('productScanFail'), true); }
+}
+
+async function handleWeightImage(event) {
+  const file = event.target.files[0]; if (!file) return; event.target.value = '';
+  showLoading(t('scanning2'), t('scanSub'));
+  try {
+    const b64 = await toBase64(file); const mediaType = file.type || 'image/jpeg';
+    const apiKey = localStorage.getItem('anthropicApiKey');
+    if (!apiKey) { hideLoading(); showToast(lang==='he'?'חסר API key':'Missing API key', true); return; }
+    const priceKg = parseFloat(document.getElementById('priceInput').value) || 0;
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 100,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: b64 } },
+          { type: 'text', text: `Supermarket product sold by weight (₪${priceKg}/kg). Estimate weight in kg. Reply ONLY:\nWEIGHT: [kg]\nREASON: [one sentence in Hebrew]` }
+        ]}]})
+    });
+    hideLoading(); const data = await resp.json(); const raw = (data.content?.[0]?.text || '').trim();
+    const wm = raw.match(/WEIGHT:\s*([\d.]+)/i); const rm = raw.match(/REASON:\s*(.+)/i);
+    if (wm) {
+      const w = parseFloat(wm[1]);
       document.getElementById('weightInput').value = w.toFixed(3);
       updateWeightTotal();
-      const noteEl = document.getElementById('weightEstimateNote');
-      noteEl.style.display = 'block';
-      noteEl.textContent = (reasonMatch ? reasonMatch[1].trim() + ' · ' : '') + t('weightEstimate', w.toFixed(3));
+      const note = document.getElementById('weightEstimateNote');
+      note.style.display = 'block';
+      note.textContent = (rm ? rm[1].trim() + ' · ' : '') + t('weightEstimate', w.toFixed(3));
       showToast(t('weightEstimate', w.toFixed(3)));
-    } else {
-      showToast(t('weightScanFail'), true);
-    }
-  } catch(e) {
-    hideLoading();
-    showToast(t('weightScanFail'), true);
+    } else showToast(t('weightScanFail'), true);
+  } catch(e) { hideLoading(); showToast(t('weightScanFail'), true); }
+}
+
+function toBase64(file) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(file); });
+}
+
+// ─── RENDER ITEMS ─────────────────────────────────────────────────────────────
+function renderItems() {
+  const list = document.getElementById('itemsList');
+  if (!items.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">🛒</div><div class="empty-text">${lang==='he'?'העגלה ריקה':'Cart is empty'}</div><div class="empty-sub">${lang==='he'?'לחץ ＋ למטה להוספת פריט':'Tap ＋ below to add an item'}</div></div>`;
+    return;
   }
+  list.innerHTML = items.map((item, idx) => {
+    const dealBadge = item.deal ? `<span class="deal-badge">🏷 ${t('dealInfo', item.deal.qty, item.deal.price)}</span>` : '';
+    const unitNote = item.qty > 1 ? `<span class="item-unit-price">${t('unitPrice', item.unitPrice.toFixed(2))} ${t('qtyLabel', item.qty)}</span>` : '';
+    return `<div class="item-card" id="card-${item.id}">
+      <div class="item-num">${items.length - idx}</div>
+      <div class="item-body">
+        <div class="item-display">
+          <div class="item-name">${escHtml(item.name)}</div>
+          <div class="item-detail">${dealBadge}${item.perKg ? `<span class="deal-badge">⚖️ ${item.weightKg}ק"ג · ₪${item.unitPrice}${t('perKg')}</span>` : ''}</div>
+          <div class="item-price-row"><span class="item-total-price">₪${item.totalPrice.toFixed(2)}</span>${unitNote}</div>
+        </div>
+        <div class="item-edit-area">
+          <div class="edit-row"><label>${t('editName')}</label><input type="text" id="edit-name-${item.id}" value="${escHtml(item.name)}" dir="rtl"/></div>
+          <div class="edit-row"><label>${t('editPrice')}</label><input type="number" id="edit-price-${item.id}" value="${item.unitPrice}" min="0" step="0.01"/></div>
+          <div class="edit-row"><label>${t('editQty')}</label><input type="number" id="edit-qty-${item.id}" value="${item.qty}" min="1" step="1"/></div>
+          <div class="edit-actions">
+            <button class="edit-save" onclick="saveEdit(${item.id})">${t('editSave')}</button>
+            <button class="edit-cancel" onclick="cancelEdit(${item.id})">${t('editCancel')}</button>
+          </div>
+        </div>
+      </div>
+      <div class="item-actions">
+        <button class="action-btn fav-star-btn ${isFav(item.name)?'saved':''}" onclick="toggleFav(${item.id})">⭐</button>
+        <button class="action-btn" onclick="startEdit(${item.id})">✏️</button>
+        <button class="action-btn delete" onclick="deleteItem(${item.id})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-// ─── SAVED LISTS ──────────────────────────────────────────────────────────────
-function getSavedLists() {
-  return JSON.parse(localStorage.getItem('cartSavedLists') || '[]');
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function saveItems() { localStorage.setItem('cartItems', JSON.stringify(items)); }
+function escHtml(str) { return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+let toastTimer;
+function showToast(msg, warn=false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast show' + (warn?' warn':'');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.className = 'toast', 2200);
+}
+function showLoading(text, sub) {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loadingSubText').textContent = sub;
+  document.getElementById('loadingOverlay').classList.add('visible');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('visible'); }
+
+// ─── FAVORITES ───────────────────────────────────────────────────────────────
+function getFavs() { return JSON.parse(localStorage.getItem('cartFavorites') || '[]'); }
+function saveFavs(f) { localStorage.setItem('cartFavorites', JSON.stringify(f)); }
+function isFav(name) { return getFavs().some(f => f.name === name); }
+
+function toggleFav(id) {
+  const item = items.find(i => i.id === id); if (!item) return;
+  const favs = getFavs(); const idx = favs.findIndex(f => f.name === item.name);
+  if (idx >= 0) { favs.splice(idx, 1); saveFavs(favs); showToast(t('favRemoved')); }
+  else { favs.unshift({ name: item.name, unitPrice: item.unitPrice, perKg: item.perKg||false, deal: item.deal||null }); saveFavs(favs); showToast(t('favAdded')); }
+  renderItems(); renderFavs();
+  // Update badge
+  const badge = document.getElementById('favsBadge');
+  const fc = getFavs().length;
+  if (fc > 0) { badge.textContent = fc; badge.classList.add('visible'); } else badge.classList.remove('visible');
 }
 
-function saveSavedLists(lists) {
-  localStorage.setItem('cartSavedLists', JSON.stringify(lists));
+function renderFavs() {
+  const favs = getFavs();
+  const list = document.getElementById('favsList');
+  // Update badge
+  const badge = document.getElementById('favsBadge');
+  if (favs.length > 0) { badge.textContent = favs.length; badge.classList.add('visible'); } else badge.classList.remove('visible');
+
+  if (!favs.length) {
+    list.innerHTML = `<div class="screen-empty"><div class="screen-empty-icon">⭐</div>${t('favEmpty')}</div>`;
+    return;
+  }
+  list.innerHTML = favs.map((fav, i) => {
+    const dealStr = fav.deal ? `<span class="deal-badge">🏷 ${fav.deal.qty}×₪${fav.deal.price}</span>` : '';
+    return `<div class="fav-item" onclick="addFavToCartByIdx(${i})">
+      <div style="font-size:22px;flex-shrink:0">⭐</div>
+      <div class="fav-item-info">
+        <div class="fav-item-name">${escHtml(fav.name)}</div>
+        <div class="fav-item-price">${dealStr} ₪${fav.unitPrice.toFixed(2)}${fav.perKg?t('perKg'):''}</div>
+      </div>
+      <button class="fav-item-del" onclick="event.stopPropagation();deleteFavByIdx(${i})">✕</button>
+    </div>`;
+  }).join('');
 }
+
+function addFavToCart(name) {
+  const fav = getFavs().find(f => f.name === name); if (!fav) return;
+  items.unshift({ id: Date.now(), name: fav.name, unitPrice: fav.unitPrice, qty: fav.deal?fav.deal.qty:1, totalPrice: fav.deal?fav.deal.price:fav.unitPrice, deal: fav.deal||null, perKg: fav.perKg||false });
+  saveItems(); renderItems(); updateTotal(); showToast(t('favLoaded')); switchTab('cart');
+}
+function addFavToCartByIdx(idx) { const f = getFavs(); if (f[idx]) addFavToCart(f[idx].name); }
+function deleteFav(name) { saveFavs(getFavs().filter(f => f.name !== name)); renderFavs(); renderItems(); showToast(t('favRemoved')); }
+function deleteFavByIdx(idx) { const f = getFavs(); if (f[idx]) deleteFav(f[idx].name); }
+function updateFavPriceIfExists(name, newPrice) {
+  const favs = getFavs(); const fav = favs.find(f => f.name === name);
+  if (fav && fav.unitPrice !== newPrice) { const old = fav.unitPrice; fav.unitPrice = newPrice; saveFavs(favs); renderFavs(); showToast(t('priceUpdated', old.toFixed(2), newPrice.toFixed(2))); }
+}
+
+// ─── SAVED LISTS ─────────────────────────────────────────────────────────────
+function getSavedLists() { return JSON.parse(localStorage.getItem('cartSavedLists') || '[]'); }
+function saveSavedLists(l) { localStorage.setItem('cartSavedLists', JSON.stringify(l)); }
 
 function saveCurrentCart() {
-  if (items.length === 0) { showToast(t('emptyCartSave'), true); return; }
-  const modal = document.getElementById('saveModal');
+  if (!items.length) { showToast(t('emptyCartSave'), true); return; }
   document.getElementById('saveModalTitle').textContent = t('saveModalTitle');
   document.getElementById('saveNameInput').placeholder = t('savePlaceholder');
   document.getElementById('saveNameInput').value = '';
-  document.getElementById('saveCancelBtn').textContent = lang === 'he' ? 'ביטול' : 'Cancel';
-  document.getElementById('saveConfirmBtn').textContent = lang === 'he' ? 'שמור' : 'Save';
-  modal.style.display = 'flex';
-  setTimeout(() => document.getElementById('saveNameInput').focus(), 100);
+  document.getElementById('saveCancelBtn').textContent = lang==='he'?'ביטול':'Cancel';
+  document.getElementById('saveConfirmBtn').textContent = lang==='he'?'שמור':'Save';
+  document.getElementById('saveModal').classList.add('open');
+  setTimeout(() => document.getElementById('saveNameInput').focus(), 200);
 }
-
-function closeSaveModal() {
-  document.getElementById('saveModal').style.display = 'none';
-}
-
+function closeSaveModal() { document.getElementById('saveModal').classList.remove('open'); }
 function confirmSaveCart() {
   const name = document.getElementById('saveNameInput').value.trim();
   const now = new Date();
-  const dateStr = now.toLocaleDateString('he-IL', { day:'2-digit', month:'2-digit' });
-  const listName = name || (lang === 'he' ? `קנייה ${dateStr}` : `Shopping ${dateStr}`);
+  const dateStr = now.toLocaleDateString('he-IL', {day:'2-digit',month:'2-digit'});
+  const listName = name || (lang==='he' ? `קנייה ${dateStr}` : `Shopping ${dateStr}`);
   const lists = getSavedLists();
-  lists.unshift({
-    id: Date.now(),
-    name: listName,
-    date: now.toISOString(),
-    total: items.reduce((s,i) => s+i.totalPrice, 0).toFixed(2),
-    count: items.length,
-    items: JSON.parse(JSON.stringify(items))
-  });
-  saveSavedLists(lists);
-  closeSaveModal();
-  renderFavs();
-  renderSavedLists();
-  showToast(t('listSaved'));
+  lists.unshift({ id: Date.now(), name: listName, date: now.toISOString(), total: items.reduce((s,i)=>s+i.totalPrice,0).toFixed(2), count: items.length, items: JSON.parse(JSON.stringify(items)) });
+  saveSavedLists(lists); closeSaveModal(); renderSavedLists(); showToast(t('listSaved'));
+  // Update badge
+  updateListsBadge();
 }
-
 function loadList(id) {
-  const lists = getSavedLists();
-  const list = lists.find(l => l.id === id);
-  if (!list) return;
-  items = JSON.parse(JSON.stringify(list.items));
-  saveItems();
-  renderItems();
-  updateTotal();
-  showToast(t('listLoaded'));
-  window.scrollTo(0, 0);
+  const list = getSavedLists().find(l => l.id === id); if (!list) return;
+  items = JSON.parse(JSON.stringify(list.items)); saveItems(); renderItems(); updateTotal(); showToast(t('listLoaded')); switchTab('cart');
 }
-
 function deleteList(id) {
-  const lists = getSavedLists().filter(l => l.id !== id);
-  saveSavedLists(lists);
-  renderFavs();
-  renderSavedLists();
-  showToast(t('listDeleted'));
+  saveSavedLists(getSavedLists().filter(l => l.id !== id)); renderSavedLists(); showToast(t('listDeleted')); updateListsBadge();
 }
-
+function updateListsBadge() {
+  const c = getSavedLists().length; const badge = document.getElementById('listsBadge');
+  if (c > 0) { badge.textContent = c; badge.classList.add('visible'); } else badge.classList.remove('visible');
+}
 function renderSavedLists() {
   const lists = getSavedLists();
-  const container = document.getElementById('savedListsContainer');
+  updateListsBadge();
   document.getElementById('savedListsTitle').textContent = t('savedListsTitle');
   document.getElementById('saveCartBtn').textContent = t('saveCartBtn');
-
+  const container = document.getElementById('savedListsContainer');
   if (!lists.length) {
-    container.innerHTML = `<div style="font-size:13px;color:var(--text-muted);padding:8px 0">${lang === 'he' ? 'אין רשימות שמורות עדיין' : 'No saved lists yet'}</div>`;
+    container.innerHTML = `<div class="screen-empty"><div class="screen-empty-icon">📋</div>${lang==='he'?'אין רשימות שמורות עדיין':'No saved lists yet'}</div>`;
     return;
   }
-
   container.innerHTML = lists.map(list => {
-    const date = new Date(list.date).toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-GB', { day:'2-digit', month:'2-digit', year:'2-digit' });
+    const date = new Date(list.date).toLocaleDateString(lang==='he'?'he-IL':'en-GB', {day:'2-digit',month:'2-digit',year:'2-digit'});
     return `<div class="saved-list-item">
       <div style="flex:1;min-width:0">
-        <div class="saved-list-name">${esc(list.name)}</div>
+        <div class="saved-list-name">${escHtml(list.name)}</div>
         <div class="saved-list-meta">${date} · ${list.count} ${lang==='he'?'פריטים':'items'} · ₪${list.total}</div>
       </div>
       <div class="saved-list-actions">
@@ -1903,37 +1478,15 @@ function renderSavedLists() {
   }).join('');
 }
 
-// ─── SETTINGS ────────────────────────────────────────────────────────────────
-function toggleSettings() {
-  const panel = document.getElementById('settingsPanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-  if (panel.style.display === 'block') {
-    const saved = localStorage.getItem('anthropicApiKey') || '';
-    document.getElementById('apiKeyInput').value = saved;
-    updateApiKeyStatus();
-  }
-}
-
+// ─── API KEY ──────────────────────────────────────────────────────────────────
 function saveApiKey() {
   const key = document.getElementById('apiKeyInput').value.trim();
-  if (key) {
-    localStorage.setItem('anthropicApiKey', key);
-    updateApiKeyStatus();
-    showToast(lang === 'he' ? 'API key נשמר ✓' : 'API key saved ✓');
-    setTimeout(() => document.getElementById('settingsPanel').style.display = 'none', 800);
-  }
+  if (key) { localStorage.setItem('anthropicApiKey', key); updateApiKeyStatus(); showToast(lang==='he'?'API key נשמר ✓':'API key saved ✓'); }
 }
-
 function updateApiKeyStatus() {
-  const key = localStorage.getItem('anthropicApiKey');
-  const el = document.getElementById('apiKeyStatus');
-  if (key) {
-    el.textContent = (lang === 'he' ? 'מפתח שמור: ' : 'Saved key: ') + key.slice(0,12) + '...';
-    el.style.color = 'var(--green-mid)';
-  } else {
-    el.textContent = lang === 'he' ? 'אין מפתח שמור' : 'No key saved';
-    el.style.color = 'var(--text-muted)';
-  }
+  const key = localStorage.getItem('anthropicApiKey'); const el = document.getElementById('apiKeyStatus');
+  if (key) { el.textContent = (lang==='he'?'מפתח שמור: ':'Saved key: ') + key.slice(0,12) + '...'; el.style.color = 'var(--green-mid)'; }
+  else { el.textContent = lang==='he'?'אין מפתח שמור':'No key saved'; el.style.color = 'var(--text-muted)'; }
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
@@ -1946,10 +1499,9 @@ function updateApiKeyStatus() {
   applyLang();
   renderItems();
   renderFavs();
-  renderFavs();
   renderSavedLists();
   updateTotal();
-
+  updateApiKeyStatus();
 })();
 </script>
 </body>
