@@ -419,6 +419,40 @@
 
   #fileInput, #productFileInput, #weightFileInput { display: none; }
 
+  /* Input buttons row (camera + voice) */
+  .input-btns-row { display: flex; gap: 10px; margin-bottom: 14px; }
+  .input-btns-row .cam-btn { flex: 1; margin-bottom: 0; }
+
+  /* Voice button */
+  .voice-btn {
+    width: 64px; flex-shrink: 0;
+    background: #2c3e7a; color: #fff; border: none;
+    border-radius: var(--radius-sm); font-size: 26px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, transform 0.15s;
+    position: relative; overflow: hidden;
+  }
+  .voice-btn:active { transform: scale(0.95); }
+  .voice-btn.listening {
+    background: #c0392b;
+    animation: voicePulse 1s ease-in-out infinite;
+  }
+  @keyframes voicePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(192,57,43,0.5); }
+    50% { box-shadow: 0 0 0 10px rgba(192,57,43,0); }
+  }
+
+  /* Voice result bubble */
+  .voice-result {
+    display: none; background: #eef2ff; border: 1.5px solid #7c8fd4;
+    border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 12px;
+    font-size: 14px; color: #2c3e7a; font-weight: 600; text-align: center;
+    animation: fadeIn 0.2s ease;
+  }
+  .voice-result.visible { display: block; }
+  .voice-result.error { background: var(--red-light); border-color: var(--red); color: var(--red); }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(-4px); } to { opacity:1; transform: translateY(0); } }
+
   /* OCR preview */
   .ocr-preview { display: none; margin-bottom: 12px; text-align: center; }
   .ocr-preview.visible { display: block; }
@@ -718,14 +752,20 @@
     <button class="sheet-close" onclick="closeSheet()">✕</button>
   </div>
   <div class="sheet-body">
-    <!-- Camera -->
-    <button class="cam-btn" onclick="document.getElementById('fileInput').click()">
-      <span class="cam-icon-big">📷</span>
-      <span id="camBtnText">צלם תג מחיר</span>
-    </button>
+    <!-- Camera + Voice row -->
+    <div class="input-btns-row">
+      <button class="cam-btn" onclick="document.getElementById('fileInput').click()">
+        <span class="cam-icon-big">📷</span>
+        <span id="camBtnText">צלם תג מחיר</span>
+      </button>
+      <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()" title="זיהוי קולי">🎤</button>
+    </div>
     <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleImage(event)">
     <input type="file" id="productFileInput" accept="image/*" capture="environment" onchange="handleProductImage(event)">
     <input type="file" id="weightFileInput" accept="image/*" capture="environment" onchange="handleWeightImage(event)">
+
+    <!-- Voice result -->
+    <div class="voice-result" id="voiceResult"></div>
 
     <!-- OCR preview -->
     <div class="ocr-preview" id="ocrPreview">
@@ -1194,6 +1234,259 @@ function confirmReset() {
 }
 function closeResetModal() { document.getElementById('resetModal').classList.remove('open'); }
 function doReset() { items = []; saveItems(); renderItems(); updateTotal(); closeResetModal(); showToast(t('resetDone')); }
+
+// ─── VOICE RECOGNITION ───────────────────────────────────────────────────────
+let recognition = null;
+let isListening = false;
+
+// ── Hebrew number words → digits ─────────────────────────────────────────────
+// Covers masculine + feminine, all common currency words, and compound numbers.
+const HE_ONES = [
+  // value, [...variants]
+  [0,  ['אפס']],
+  [1,  ['אחד','אחת','אחד-עשר','אחת-עשרה']],   // hyphen variants handled separately
+  [2,  ['שניים','שתיים','שני','שתי','שנים','שתים']],
+  [3,  ['שלושה','שלוש']],
+  [4,  ['ארבעה','ארבע']],
+  [5,  ['חמישה','חמש']],
+  [6,  ['שישה','שש']],
+  [7,  ['שבעה','שבע']],
+  [8,  ['שמונה']],
+  [9,  ['תשעה','תשע']],
+  [10, ['עשרה','עשר']],
+];
+const HE_TEENS = [
+  [11, ['אחד עשר','אחת עשרה','אחד-עשר','אחת-עשרה']],
+  [12, ['שנים עשר','שתים עשרה','שנים-עשר','שתים-עשרה']],
+  [13, ['שלושה עשר','שלוש עשרה']],
+  [14, ['ארבעה עשר','ארבע עשרה']],
+  [15, ['חמישה עשר','חמש עשרה']],
+  [16, ['שישה עשר','שש עשרה']],
+  [17, ['שבעה עשר','שבע עשרה']],
+  [18, ['שמונה עשר','שמונה עשרה']],
+  [19, ['תשעה עשר','תשע עשרה']],
+];
+const HE_TENS = [
+  [20, ['עשרים']],
+  [30, ['שלושים']],
+  [40, ['ארבעים']],
+  [50, ['חמישים']],
+  [60, ['שישים']],
+  [70, ['שבעים']],
+  [80, ['שמונים']],
+  [90, ['תשעים']],
+];
+const HE_HUNDREDS = [
+  [100, ['מאה']],
+  [200, ['מאתיים','מאתים']],
+  [300, ['שלוש מאות','שלושה מאות']],
+  [400, ['ארבע מאות','ארבעה מאות']],
+  [500, ['חמש מאות','חמישה מאות']],
+  [600, ['שש מאות','שישה מאות']],
+  [700, ['שבע מאות','שבעה מאות']],
+  [800, ['שמונה מאות']],
+  [900, ['תשע מאות','תשעה מאות']],
+];
+
+// Build one flat sorted list: longest phrase first (greedy match)
+function buildHeMap() {
+  const map = [];
+  for (const [v, variants] of [...HE_HUNDREDS, ...HE_TEENS, ...HE_TENS, ...HE_ONES]) {
+    for (const w of variants) map.push([w, v]);
+  }
+  map.sort((a, b) => b[0].length - a[0].length);
+  return map;
+}
+const HE_MAP = buildHeMap();
+
+// Currency / unit words to strip
+const CURRENCY_WORDS = /\b(ש"ח|שח|שקלים|שקל|אגורות|nis|ils)\b/gi;
+// Conjunction "ו" connecting number parts: "עשרים וחמש" → "עשרים חמש"
+const AND_PATTERN = /\bו([\u05D0-\u05EA])/g;
+
+function hebrewWordsToDigits(text) {
+  // Strip currency words first
+  text = text.replace(CURRENCY_WORDS, '');
+  // Remove conjunction ו before Hebrew letters
+  text = text.replace(AND_PATTERN, '$1');
+  // Replace decimal markers: "נקודה"/"פסיק" → "."
+  text = text.replace(/\bנקודה\b/g, '.').replace(/\bפסיק\b/g, '.');
+
+  // Iteratively replace longest matching Hebrew number word with digit
+  let safety = 0;
+  let changed = true;
+  while (changed && safety++ < 30) {
+    changed = false;
+    for (const [word, val] of HE_MAP) {
+      const re = new RegExp(`(?<![\\u05D0-\\u05EA])${word}(?![\\u05D0-\\u05EA])`, 'g');
+      const next = text.replace(re, ` ${val} `);
+      if (next !== text) { text = next; changed = true; }
+    }
+  }
+
+  // Collapse adjacent digit tokens that should be summed:
+  // e.g. "100 20 5" → 125,  "20 5" → 25  (but NOT "12 15" which are separate prices)
+  text = text.replace(/\s+/g, ' ').trim();
+  text = collapseDigitGroups(text);
+  return text;
+}
+
+function collapseDigitGroups(text) {
+  // Split into tokens
+  const tokens = text.split(' ');
+  const out = [];
+  let i = 0;
+  while (i < tokens.length) {
+    const n = parseFloat(tokens[i]);
+    if (!isNaN(n) && Number.isInteger(n)) {
+      // Look ahead and accumulate number words that form a single price
+      // Rule: next integer must be < current (hundreds→tens→ones pattern)
+      let acc = n;
+      let j = i + 1;
+      while (j < tokens.length) {
+        const m = parseFloat(tokens[j]);
+        if (!isNaN(m) && Number.isInteger(m) && m < acc) {
+          acc += m; j++;
+        } else break;
+      }
+      out.push(acc);
+      i = j;
+    } else {
+      out.push(tokens[i]);
+      i++;
+    }
+  }
+  return out.join(' ');
+}
+
+function parseVoiceInput(transcript) {
+  let text = transcript.trim();
+
+  // ── Step 1: handle "וחצי" BEFORE stripping currency words
+  // "שבע וחצי שקל" → "שבע נקודה חמש שקל"
+  text = text.replace(/וחצי/g, 'נקודה חמש');
+
+  // ── Step 2: detect "X ו-Y" where Y < 100 → means X shekels and Y agorot
+  // e.g. "שבע ושלושים" = 7.30, "שלושה ותשעים" = 3.90
+  // We mark this BEFORE converting words, using a placeholder
+  // Pattern: <shekel-word> ו <agorot-number-word>
+  // We'll handle this after word→digit conversion by detecting N + '.' + M pattern
+
+  // ── Step 3: normalize punctuation
+  text = text.replace(/[,،]/g, '.').replace(/\s+/g, ' ');
+
+  // ── Step 4: convert Hebrew number words → digits
+  text = hebrewWordsToDigits(text);
+
+  // ── Step 5: handle "נקודה" as decimal point (from וחצי or spoken "נקודה")
+  text = text.replace(/נקודה\s*(\d+)/g, '.$1');
+  text = text.replace(/\s*\.\s*/g, '.');
+
+  // ── Step 6: detect "N ו M" pattern (remaining ו between two numbers = decimal)
+  // e.g. "7 ו 30" → "7.30" meaning ₪7.30
+  text = text.replace(/(\d+)\s+ו\s+(\d{1,2})(?!\d)/g, (_, shk, ag) => {
+    const agStr = ag.length === 1 ? ag + '0' : ag; // "5" → "50" agorot
+    return `${shk}.${agStr}`;
+  });
+
+  // ── Step 7: also handle remaining ו between digit and word (shouldn't remain but safety)
+  text = text.replace(/\s+/g, ' ').trim();
+
+  // ── Step 8: extract price
+  const pricePattern = /(\d+(?:\.\d{1,2})?)/g;
+  const matches = [...text.matchAll(pricePattern)];
+  if (matches.length === 0) return null;
+
+  const price = parseFloat(matches[matches.length - 1][1]);
+  if (!price || price <= 0) return null;
+
+  // ── Step 9: name = everything non-numeric
+  let name = text.replace(/\d+(?:\.\d{1,2})?/g, '').replace(/[.\-]/g, '').trim();
+  name = name.replace(/\s+/g, ' ').trim();
+
+  return { price, name };
+}
+
+function initRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return null;
+  const r = new SpeechRecognition();
+  r.lang = lang === 'he' ? 'he-IL' : 'en-US';
+  r.continuous = false;
+  r.interimResults = false;
+  r.maxAlternatives = 3;
+
+  r.onstart = () => {
+    isListening = true;
+    document.getElementById('voiceBtn').classList.add('listening');
+    document.getElementById('voiceBtn').textContent = '🔴';
+    showVoiceResult(lang==='he' ? '🎤 מאזין...' : '🎤 Listening...', false);
+  };
+
+  r.onresult = (event) => {
+    // Try all alternatives
+    let best = null;
+    for (let i = 0; i < event.results[0].length; i++) {
+      const transcript = event.results[0][i].transcript;
+      const parsed = parseVoiceInput(transcript);
+      if (parsed && parsed.price > 0) { best = parsed; break; }
+    }
+    if (best) {
+      document.getElementById('priceInput').value = best.price.toFixed(2);
+      if (best.name) document.getElementById('nameInput').value = best.name;
+      const msg = best.name
+        ? `✓ ${best.name} — ₪${best.price.toFixed(2)}`
+        : `✓ ₪${best.price.toFixed(2)}`;
+      showVoiceResult(msg, false);
+      // Flash effect on fields
+      ['priceInput', best.name ? 'nameInput' : ''].filter(Boolean).forEach(id => {
+        const el = document.getElementById(id);
+        el.style.borderColor = 'var(--green-light)';
+        el.style.background = '#f0faf4';
+        setTimeout(() => { el.style.borderColor = ''; el.style.background = ''; }, 1200);
+      });
+    } else {
+      // Show what was heard but couldn't parse
+      const raw = event.results[0][0].transcript;
+      showVoiceResult((lang==='he' ? '🤔 לא זוהה מחיר: ' : '🤔 No price found: ') + raw, true);
+    }
+  };
+
+  r.onerror = (event) => {
+    const msgs = { 'not-allowed': lang==='he'?'נדרש אישור מיקרופון':'Microphone permission required', 'no-speech': lang==='he'?'לא נשמע דיבור':'No speech detected', 'network': lang==='he'?'שגיאת רשת':'Network error' };
+    showVoiceResult('⚠️ ' + (msgs[event.error] || event.error), true);
+  };
+
+  r.onend = () => {
+    isListening = false;
+    document.getElementById('voiceBtn').classList.remove('listening');
+    document.getElementById('voiceBtn').textContent = '🎤';
+  };
+
+  return r;
+}
+
+function toggleVoice() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showVoiceResult(lang==='he' ? '⚠️ הדפדפן לא תומך בזיהוי קולי' : '⚠️ Browser does not support voice', true);
+    return;
+  }
+  if (isListening) {
+    recognition && recognition.stop();
+    return;
+  }
+  recognition = initRecognition();
+  recognition && recognition.start();
+}
+
+function showVoiceResult(msg, isError) {
+  const el = document.getElementById('voiceResult');
+  el.textContent = msg;
+  el.className = 'voice-result visible' + (isError ? ' error' : '');
+  // Auto-hide after 4s if not an error
+  if (!isError) setTimeout(() => el.classList.remove('visible'), 4000);
+}
 
 // ─── DEAL TOGGLE ─────────────────────────────────────────────────────────────
 function toggleDeal() {
