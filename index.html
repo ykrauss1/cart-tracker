@@ -269,6 +269,12 @@
   }
   input[type="number"]:focus, input[type="text"]:focus { outline: none; border-color: var(--green-light); }
   .budget-clear { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 20px; padding: 4px; }
+  .budget-confirm-btn {
+    padding: 8px 14px; background: var(--green); color: #fff; border: none;
+    border-radius: var(--radius-sm); font-size: 16px; font-weight: 700;
+    cursor: pointer; font-family: inherit; flex-shrink: 0; transition: background 0.2s;
+  }
+  .budget-confirm-btn:active { background: var(--green-mid); }
 
   /* API key */
   .api-row { display: flex; gap: 8px; align-items: center; }
@@ -645,10 +651,14 @@
           <div class="budget-input-row">
             <div class="budget-label-text" id="budgetLabelText">סכום:</div>
             <div class="budget-input-wrap">
-              <input type="number" id="budgetInput" placeholder="0" min="0" step="1" oninput="updateBudget()" />
+              <input type="number" id="budgetInput" placeholder="0" min="0" step="1"
+                oninput="updateBudget()"
+                onkeydown="if(event.key==='Enter'){confirmBudget()}" />
             </div>
+            <button class="budget-confirm-btn" onclick="confirmBudget()" id="budgetConfirmBtn">✓</button>
             <button class="budget-clear" onclick="clearBudget()" title="נקה">✕</button>
           </div>
+          <div id="budgetConfirmMsg" style="font-size:12px;color:var(--green-mid);margin-top:6px;display:none">✓ <span id="budgetConfirmText">תקציב נקבע</span></div>
         </div>
 
         <!-- API Key -->
@@ -982,9 +992,25 @@ function updateBudgetTabs() {
   document.getElementById('tabGoal').className  = 'budget-tab' + (budgetMode === 'goal'  ? ' active-goal'  : '');
 }
 function updateBudget() {
+  // just update the value live, pill updates via updateTotal
   budget = parseFloat(document.getElementById('budgetInput').value) || 0;
   localStorage.setItem('cartBudget', budget);
   updateTotal();
+}
+function confirmBudget() {
+  budget = parseFloat(document.getElementById('budgetInput').value) || 0;
+  localStorage.setItem('cartBudget', budget);
+  updateTotal();
+  // Show confirmation message briefly
+  const msg = document.getElementById('budgetConfirmMsg');
+  const txt = document.getElementById('budgetConfirmText');
+  txt.textContent = budget > 0
+    ? (lang==='he' ? `תקציב ₪${budget} נקבע` : `Budget ₪${budget} set`)
+    : (lang==='he' ? 'תקציב נוקה' : 'Budget cleared');
+  msg.style.display = 'block';
+  setTimeout(() => msg.style.display = 'none', 2000);
+  // Go back to cart
+  if (budget > 0) setTimeout(() => switchTab('cart'), 600);
 }
 function clearBudget() {
   budget = 0; localStorage.removeItem('cartBudget');
